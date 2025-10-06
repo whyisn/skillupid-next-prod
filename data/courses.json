@@ -1,0 +1,56 @@
+[
+  {
+    "id": "c1",
+    "title": "Canva untuk CV & Portofolio",
+    "category": "Desain",
+    "level": "Pemula",
+    "rating": 4.9,
+    "price": 0,
+    "premium": false
+  },
+  {
+    "id": "c2",
+    "title": "Instagram Marketing untuk Fresh Grad",
+    "category": "Marketing",
+    "level": "Pemula",
+    "rating": 4.8,
+    "price": 25000,
+    "premium": true
+  },
+  {
+    "id": "c3",
+    "title": "Excel Dasar untuk Kantoran",
+    "category": "Produktivitas",
+    "level": "Pemula",
+    "rating": 4.7,
+    "price": 20000,
+    "premium": true
+  },
+  {
+    "id": "c4",
+    "title": "HTML & CSS Dasar",
+    "category": "Coding",
+    "level": "Pemula",
+    "rating": 4.6,
+    "price": 0,
+    "premium": false
+  },
+  {
+    "id": "c5",
+    "title": "Copywriting untuk Personal Branding",
+    "category": "Marketing",
+    "level": "Menengah",
+    "rating": 4.8,
+    "price": 30000,
+    "premium": true
+  },
+  {
+    "id": "c6",
+    "title": "AI Tools untuk Riset Cepat",
+    "category": "AI Tools",
+    "level": "Menengah",
+    "rating": 4.9,
+    "price": 30000,
+    "premium": true
+  }
+]

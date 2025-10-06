@@ -1,0 +1,28 @@
+{
+  "name": "skillupid-next-prod",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "postinstall": "node scripts/postinstall-note.js"
+  },
+  "dependencies": {
+    "next": "14.2.6",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "clsx": "^2.1.1",
+    "@supabase/supabase-js": "^2.45.2",
+    "zod": "^3.23.8",
+    "dayjs": "^1.11.13"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.10",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.6"
+  }
+}
