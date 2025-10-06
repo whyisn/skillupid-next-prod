@@ -4,8 +4,6 @@ Stack: **Next.js 14 (App Router)** + **Tailwind** + **Supabase (Auth/Postgres/St
 
 ## Jalankan lokal
 ```bash
-npm install
-cp .env.example .env.local
 npm run dev
 # http://localhost:3000
 ```
