@@ -85,7 +85,13 @@ function Catalog(){
             </div>
             <div className="mt-3 flex items-center justify-between">
               <span className="font-semibold">{c.price ? `Rp${(c.price/1000).toFixed(0)}k` : 'Gratis'}</span>
-              <a href="/dashboard" className="rounded-xl px-3 py-2 bg-black text-white text-sm">Lihat Detail</a>
+              <a
+                href={`/courses?id=${c.id}`}
+                className="rounded-xl px-3 py-2 bg-black text-white text-sm"
+              >
+                Lihat Detail
+              </a>
+
             </div>
           </Card>
         ))}
