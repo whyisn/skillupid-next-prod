@@ -1,5 +1,14 @@
 [
   {
+    "id": "c0",
+    "title": "Dasar-Dasar Cyber Security",
+    "category": "Keamanan Digital",
+    "level": "Menengah",
+    "rating": 4.9,
+    "price": 0,
+    "premium": true
+  },
+  {
     "id": "c1",
     "title": "Canva untuk CV & Portofolio",
     "category": "Desain",
