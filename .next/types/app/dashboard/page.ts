@@ -1,4 +1,4 @@
-// File: D:\GitHub\skillupid-next-prod\app\dashboard\page.js
+// File: D:\github\skillupid-next-prod\app\dashboard\page.js
 import * as entry from '../../../../app/dashboard/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
