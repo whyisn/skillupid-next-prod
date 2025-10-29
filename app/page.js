@@ -10,6 +10,8 @@ export default async function Home() {
     .select("id,title,category,level,price,premium,rating,thumbnail_url")
     .order("title", { ascending: true });
 
+    const heroImage = process.env.NEXT_PUBLIC_HERO_IMAGE_URL;
+
   return (
     <main>
       {/* Hero */}
