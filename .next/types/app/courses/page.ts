@@ -1,8 +1,8 @@
-// File: C:\Wahyu\Dev\GitHub\skillupid-next-prod\app\page.js
-import * as entry from '../../../app/page.js'
+// File: C:\Wahyu\Dev\GitHub\skillupid-next-prod\app\courses\page.js
+import * as entry from '../../../../app/courses/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
-type TEntry = typeof import('../../../app/page.js')
+type TEntry = typeof import('../../../../app/courses/page.js')
 
 // Check that the entry is a valid entry
 checkFields<Diff<{
