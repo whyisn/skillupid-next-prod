@@ -1,4 +1,6 @@
 import './globals.css'
+// Tambahan: tombol Auth (client component)
+import { AuthButtons } from '@/components/AuthButtons'
 
 export const metadata = {
   title: 'SkillUpID',
@@ -15,12 +17,23 @@ export default function RootLayout({ children }) {
               <div className="w-7 h-7 rounded-xl bg-black text-white grid place-items-center font-bold">S</div>
               <span className="font-bold">SkillUpID</span>
             </div>
-            <nav className="hidden md:flex items-center gap-6 text-sm text-gray-700">
+            {/* <nav className="hidden md:flex items-center gap-6 text-sm text-gray-700">
               <a href="#catalog" className="hover:text-black">Katalog</a>
               <a href="#pricing" className="hover:text-black">Harga</a>
               <a href="#faq" className="hover:text-black">FAQ</a>
               <a href="/dashboard" className="hover:text-black">Dashboard</a>
-            </nav>
+            </nav> */
+            <div className="hidden md:flex items-center gap-4">
+              <nav className="flex items-center gap-6 text-sm text-gray-700">
+                <a href="#catalog" className="hover:text-black">Katalog</a>
+                <a href="#pricing" className="hover:text-black">Harga</a>
+                <a href="#faq" className="hover:text-black">FAQ</a>
+                <a href="/dashboard" className="hover:text-black">Dashboard</a>
+              </nav>
+              {/* Tombol Masuk/Keluar */}
+              <AuthButtons />
+            </div>
+            }
           </div>
         </div>
         {children}
