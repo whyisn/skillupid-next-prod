@@ -2,4 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body { height: 100%; }
+/* Font modern dan warna lembut */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+html,
+body {
+    height: 100%;
+    font-family: 'Inter', sans-serif;
+    background-color: #F9FAFB;
+    /* base */
+    color: #1E293B;
+    /* textMain */
+}
+
+/* Animasi halus */
+* {
+    transition: all 0.2s ease-in-out;
+}

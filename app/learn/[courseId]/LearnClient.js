@@ -1,4 +1,3 @@
-// app/learn/[courseId]/LearnClient.js
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -8,17 +7,14 @@ import ProgressBar from "@/components/ProgressBar";
 
 export default function LearnClient({ enrollmentId, courseId, modules, activeModuleId }) {
   const [currentId, setCurrentId] = useState(activeModuleId);
-  const [progress, setProgress] = useState({}); // { moduleId: percent }
+  const [progress, setProgress] = useState({});
 
   const active = useMemo(() => modules.find(m => m.id === currentId) || modules[0], [modules, currentId]);
-
   useEffect(() => { setCurrentId(activeModuleId); }, [activeModuleId]);
 
-  // Simulasi: tandai progress selesai saat video diputar 5 detik (ganti dengan callback player ended)
   const handleCompleted = async () => {
     setProgress(p => ({ ...p, [active.id]: 100 }));
-    // upsert progress ke API kamu
-    fetch("/api/progress", {
+    await fetch("/api/progress", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ enrollment_id: enrollmentId, module_id: active.id, percent: 100 }),
@@ -36,8 +32,9 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-12 gap-6">
-      <aside className="col-span-12 md:col-span-4 lg:col-span-3">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-12 gap-8">
+      {/* Sidebar */}
+      <aside className="col-span-12 md:col-span-4 lg:col-span-3 bg-white rounded-2xl shadow-md border border-borderLight">
         <ModuleSidebar
           modules={modules}
           activeId={active?.id}
@@ -46,23 +43,37 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
         />
       </aside>
 
+      {/* Konten utama */}
       <section className="col-span-12 md:col-span-8 lg:col-span-9">
-        {active?.video_provider === "mux" && active?.video_id ? (
-          <SignedMuxPlayer playbackId={active.video_id} onCompleted={handleCompleted} />
-        ) : (
-          <div className="aspect-video rounded-xl bg-gray-100 grid place-items-center text-gray-500">
-            Video belum tersedia
+        <div className="bg-white p-6 rounded-2xl shadow-md border border-borderLight">
+          {active?.video_provider === "mux" && active?.video_id ? (
+            <SignedMuxPlayer playbackId={active.video_id} onCompleted={handleCompleted} />
+          ) : (
+            <div className="aspect-video rounded-xl bg-gray-100 grid place-items-center text-gray-500">
+              🎥 Video belum tersedia
+            </div>
+          )}
+
+          <h1 className="text-2xl font-semibold text-textMain mt-6">{active?.title}</h1>
+
+          <div className="mt-6">
+            <ProgressBar value={overall} />
           </div>
-        )}
 
-        <h1 className="text-xl font-bold mt-4">{active?.title}</h1>
-        <div className="mt-4">
-          <ProgressBar value={overall} />
-        </div>
-
-        <div className="mt-4 flex gap-2">
-          <a href={`/quiz/${courseId}/${active?.id}`} className="px-4 py-2 rounded-xl border">Kuis Modul</a>
-          <button className="px-4 py-2 rounded-xl bg-black text-white" onClick={nextModule}>Modul Berikutnya</button>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a
+              href={`/quiz/${courseId}/${active?.id}`}
+              className="px-5 py-2 rounded-xl border border-borderLight text-textMain hover:bg-gray-50"
+            >
+              🧠 Kuis Modul
+            </a>
+            <button
+              onClick={nextModule}
+              className="px-5 py-2 rounded-xl bg-primary text-white hover:bg-blue-700"
+            >
+              Modul Berikutnya →
+            </button>
+          </div>
         </div>
       </section>
     </div>

@@ -1,5 +1,4 @@
 "use client";
-// components/AuthButtons.js
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -13,10 +12,21 @@ export function AuthButtons() {
     await supabase.auth.signOut();
     window.location.href = "/";
   };
+
   return (
-    <div className="flex items-center gap-2">
-      <a href="/auth/sign-in" className="px-3 py-1 rounded border hover:bg-gray-50">Masuk</a>
-      <button onClick={signOut} className="px-3 py-1 rounded bg-black text-white hover:bg-gray-900">Keluar</button>
+    <div className="flex items-center gap-3">
+      <a
+        href="/auth/sign-in"
+        className="px-4 py-2 rounded-xl border border-borderLight text-textMain hover:bg-gray-50 hover:shadow-sm"
+      >
+        Masuk
+      </a>
+      <button
+        onClick={signOut}
+        className="px-4 py-2 rounded-xl bg-primary text-white hover:bg-blue-700 shadow-sm"
+      >
+        Keluar
+      </button>
     </div>
   );
 }

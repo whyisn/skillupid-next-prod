@@ -1,6 +1,13 @@
 export const Badge = ({ children }) => (
-  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-700">{children}</span>
+  <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-blue-100 text-primary">
+    {children}
+  </span>
 );
+
 export const Card = ({ children, className = "" }) => (
-  <div className={`rounded-2xl shadow-sm border border-gray-200 bg-white ${className}`}>{children}</div>
+  <div
+    className={`rounded-2xl shadow-sm border border-borderLight bg-white p-5 ${className}`}
+  >
+    {children}
+  </div>
 );
