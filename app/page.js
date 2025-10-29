@@ -33,8 +33,24 @@ export default async function Home() {
               </a>
             </div>
           </div>
-          <div className="aspect-video rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 grid place-items-center text-gray-500">
+          {/* <div className="aspect-video rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 grid place-items-center text-gray-500">
             Preview materi & sertifikat
+          </div> */}
+          <div className="aspect-video rounded-2xl overflow-hidden border border-gray-100 bg-gray-50">
+            {heroImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={heroImage}
+                alt="Preview materi & sertifikat"
+                className="w-full h-full object-cover"
+                loading="eager"
+                fetchpriority="high"
+              />
+            ) : (
+              <div className="w-full h-full grid place-items-center text-gray-500 bg-gradient-to-br from-gray-100 to-gray-200">
+                Preview materi & sertifikat
+              </div>
+            )}
           </div>
         </div>
       </section>
