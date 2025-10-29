@@ -1,25 +1,37 @@
-import { supabaseAdmin } from '../../../lib/supabase-server';
+// app/cert/[code]/page.js
+import { createClient } from "@/lib/supabase/server";
 
-export default async function CertificatePage({ params }){
-  const code = params.code;
-  let cert = null;
-  try {
-    const sb = supabaseAdmin();
-    const { data } = await sb.from('certificates').select('*').eq('code', code).single();
-    cert = data;
-  } catch {}
-  if(!cert){
-    return <main className="max-w-3xl mx-auto px-4 py-12"><h1 className="text-2xl font-bold">Sertifikat tidak ditemukan.</h1></main>;
+export default async function CertVerify({ params }) {
+  const supabase = createClient();
+
+  const { data: cert } = await supabase
+    .from("certificates")
+    .select("id,code,user_id,course_id,pdf_url,issued_at, users:users(name), course:courses(title)")
+    .eq("code", params.code)
+    .maybeSingle();
+
+  if (!cert) {
+    return <div className="max-w-3xl mx-auto p-8">Sertifikat tidak ditemukan.</div>;
   }
+
   return (
-    <main className="max-w-3xl mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold mb-2">Verifikasi Sertifikat</h1>
-      <p className="text-gray-600">Kode: <span className="font-mono">{cert.code}</span></p>
-      <div className="mt-4 p-4 border rounded-xl">
-        <div>Pengguna: <b>{cert.user_id}</b></div>
-        <div>Kursus: <b>{cert.course_id}</b></div>
-        <div>Diterbitkan: {new Date(cert.issued_at).toLocaleString()}</div>
-        {cert.pdf_url && <a className="inline-block mt-3 underline" href={cert.pdf_url} target="_blank">Unduh Sertifikat (PDF)</a>}
+    <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="border rounded-2xl p-8">
+        <h1 className="text-2xl font-bold mb-4">Verifikasi Sertifikat</h1>
+        <div className="space-y-2 text-gray-700">
+          <div><span className="font-medium">Kode:</span> {cert.code}</div>
+          <div><span className="font-medium">Nama:</span> {cert.users?.name || cert.user_id}</div>
+          <div><span className="font-medium">Kursus:</span> {cert.course?.title || cert.course_id}</div>
+          <div><span className="font-medium">Terbit:</span> {new Date(cert.issued_at).toLocaleDateString("id-ID")}</div>
+        </div>
+
+        <div className="mt-6">
+          {cert.pdf_url ? (
+            <a href={cert.pdf_url} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-xl bg-black text-white">Unduh PDF</a>
+          ) : (
+            <div className="text-sm text-gray-500">PDF belum tersedia.</div>
+          )}
+        </div>
       </div>
     </main>
   );

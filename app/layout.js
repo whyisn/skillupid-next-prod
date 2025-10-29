@@ -22,7 +22,7 @@ export default function RootLayout({ children }) {
               <a href="#pricing" className="hover:text-black">Harga</a>
               <a href="#faq" className="hover:text-black">FAQ</a>
               <a href="/dashboard" className="hover:text-black">Dashboard</a>
-            </nav> */
+            </nav> */}
             <div className="hidden md:flex items-center gap-4">
               <nav className="flex items-center gap-6 text-sm text-gray-700">
                 <a href="#catalog" className="hover:text-black">Katalog</a>
@@ -30,10 +30,8 @@ export default function RootLayout({ children }) {
                 <a href="#faq" className="hover:text-black">FAQ</a>
                 <a href="/dashboard" className="hover:text-black">Dashboard</a>
               </nav>
-              {/* Tombol Masuk/Keluar */}
               <AuthButtons />
             </div>
-            }
           </div>
         </div>
         {children}
