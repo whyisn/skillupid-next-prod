@@ -5,12 +5,11 @@ import { useEffect, useState } from 'react';
 import coursesMock from '../../data/courses.json';
 import { Card } from '../../components/ui';
 
-export default function CourseDetailPage() {
+export default function CoursesClient() {
   const searchParams = useSearchParams();
   const courseId = searchParams.get('id'); // ambil id dari URL ?id=c1
   const [course, setCourse] = useState(null);
 
-  // Daftar video dummy (nanti bisa diganti dari Supabase)
   const videos = [
     { id: 1, title: 'Pengenalan Keamanan Siber', duration: '10:20' },
     { id: 2, title: 'Jenis Ancaman Dunia Maya', duration: '8:45' },
@@ -20,7 +19,7 @@ export default function CourseDetailPage() {
 
   useEffect(() => {
     const found = coursesMock.find((c) => c.id === courseId);
-    setCourse(found);
+    setCourse(found || null);
   }, [courseId]);
 
   if (!course) return <div className="p-6 text-center">Memuat data kursus...</div>;
