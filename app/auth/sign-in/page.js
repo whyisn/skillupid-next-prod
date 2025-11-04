@@ -1,5 +1,8 @@
 // app/auth/sign-in/page.js
 "use client";
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const runtime = 'nodejs';
 
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Auth } from "@supabase/auth-ui-react";
