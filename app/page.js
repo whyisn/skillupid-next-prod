@@ -25,10 +25,10 @@ export default async function Home() {
               Microlearning interaktif, kuis, dan sertifikat digital yang bisa diverifikasi publik.
             </p>
             <div className="mt-6 flex gap-3">
-              <a href="/auth/sign-in" className="px-5 py-3 rounded-xl bg-black text-white">
+              <a href="/auth/sign-in" className="px-5 py-3 font-bold rounded-xl bg-[#00ffc9] text-black shadow-lg hover:shadow-xl transition-shadow">
                 Mulai Gratis
               </a>
-              <a href="#catalog" className="px-5 py-3 rounded-xl border border-gray-300">
+              <a href="#catalog" className="px-5 py-3 font-bold rounded-xl border border-gray-300">
                 Lihat Katalog
               </a>
             </div>

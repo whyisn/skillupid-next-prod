@@ -15,8 +15,8 @@ export function AuthButtons() {
   };
   return (
     <div className="flex items-center gap-2">
-      <a href="/auth/sign-in" className="px-3 py-1 rounded border hover:bg-gray-50">Masuk</a>
-      <button onClick={signOut} className="px-3 py-1 rounded bg-black text-white hover:bg-gray-900">Keluar</button>
+      <a href="/auth/sign-in" className="px-3 py-1 rounded bg-black text-white hover:bg-gray-900">Masuk</a>
+      {/*<button onClick={signOut} className="px-3 py-1 rounded bg-black text-white hover:bg-gray-900">Keluar</button>*/}
     </div>
   );
 }
