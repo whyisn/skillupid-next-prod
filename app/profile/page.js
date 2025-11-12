@@ -1,10 +1,8 @@
-// app/profile/page.js — server component (Next.js App Router)
-// UI profil terhubung ke database Supabase menggunakan @supabase/ssr
-// Catatan: sesuaikan nama tabel/kolom agar cocok dengan skema kamu.
+// app/profile/page.js — Server Component (Next.js App Router)
+// UI profil terhubung ke Supabase (read-only client untuk RSC)
 
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/server"; // ⬅️ helper-mu (read-only)
 
 function formatIDR(n) {
   try {
@@ -22,44 +20,21 @@ function ProgressBar({ value = 0 }) {
   );
 }
 
-async function getSupabaseServerClient() {
-  const cookieStore = cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-          } catch {
-            // Route handlers tidak mengizinkan set cookie; aman di page
-          }
-        },
-      },
-    }
-  );
-  return supabase;
-}
-
 export default async function ProfilePage() {
-  const supabase = await getSupabaseServerClient();
+  // ✅ Supabase untuk Server Component (tidak menulis cookie)
+  const supabase = createClient();
 
-  // 1) Auth user
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-
-  if (userErr || !user) {
-    redirect("/auth/sign-in");
+  // 1) Auth (fail-soft bila tidak ada sesi)
+  let user = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error) user = data?.user ?? null;
+  } catch {
+    user = null;
   }
+  if (!user) redirect("/auth/sign-in");
 
-  // 2) Profile (opsi A: tabel `profiles`; opsi B: tabel `users`)
-  //    Ganti nama tabel/kolom sesuai skema kamu.
+  // 2) Profile (opsi A: `profiles`; fallback ke `users`)
   let profile = null;
   const { data: profA } = await supabase
     .from("profiles")
@@ -77,7 +52,7 @@ export default async function ProfilePage() {
     if (profB) profile = profB;
   }
 
-  // 3) Enrollments + Courses (relasi course_id → courses)
+  // 3) Enrollments + Courses
   const { data: enrollments = [] } = await supabase
     .from("enrollments")
     .select(
@@ -94,7 +69,7 @@ export default async function ProfilePage() {
     .eq("user_id", user.id)
     .order("issued_at", { ascending: false });
 
-  // 5) Payments (sinkron dari Midtrans webhook)
+  // 5) Payments
   const { data: payments = [] } = await supabase
     .from("payments")
     .select("id, ref, course_title, amount, status, paid_at, created_at")
@@ -104,7 +79,6 @@ export default async function ProfilePage() {
   const displayName = profile?.full_name || user.user_metadata?.name || user.email?.split("@")[0];
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName || "User")}`;
   const headline = profile?.headline || "Belajar 10 menit per hari";
-
   const completedCount = (enrollments || []).filter((e) => (e?.progress ?? 0) >= 100).length;
 
   return (
@@ -128,7 +102,9 @@ export default async function ProfilePage() {
           </div>
           <div className="flex gap-2">
             <a href="/learn" className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90">Lanjut Belajar</a>
-            <a href="/auth/sign-in" className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50">Keluar</a>
+            <form action="/api/logout" method="POST">
+              <button type="submit" className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50">Keluar</button>
+            </form>
           </div>
         </div>
       </div>
@@ -203,8 +179,11 @@ export default async function ProfilePage() {
               {(enrollments || []).map((e) => (
                 <article key={e.id} className="border border-gray-100 rounded-xl p-4 flex gap-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={e.courses?.thumbnail || 
-                    "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?q=80&w=600&auto=format&fit=crop"} alt="thumb" className="w-24 h-24 rounded-lg object-cover" />
+                  <img
+                    src={e.courses?.thumbnail || "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?q=80&w=600&auto=format&fit=crop"}
+                    alt="thumb"
+                    className="w-24 h-24 rounded-lg object-cover"
+                  />
                   <div className="flex-1">
                     <h3 className="font-semibold leading-snug">{e.courses?.title || "Tanpa Judul"}</h3>
                     <p className="text-xs text-gray-500 mt-1">

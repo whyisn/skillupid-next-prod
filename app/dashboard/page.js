@@ -43,19 +43,25 @@
 //   );
 // }
 
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-import DashboardClient from './DashboardClient';
+// app/dashboard/page.js
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import DashboardClient from "./DashboardClient";
 
 export default async function Dashboard() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = createClient(); // read-only
+  let user = null;
 
-  // Belum login? Arahkan ke halaman sign-in + bawa tujuan baliknya
-  if (!user) {
-    redirect(`/auth/sign-in?redirect=${encodeURIComponent('/dashboard')}`);
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error) user = data?.user ?? null;
+  } catch {
+    user = null; // treat as unauthenticated (no refresh token)
   }
 
-  // Sudah login → render UI client milikmu
+  if (!user) {
+    redirect(`/auth/sign-in?redirect=${encodeURIComponent("/dashboard")}`);
+  }
+
   return <DashboardClient userEmail={user.email} />;
 }
