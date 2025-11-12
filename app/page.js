@@ -105,6 +105,14 @@ export default async function Home() {
             <h4 className="font-semibold">Apakah ada kelas gratis?</h4>
             <p className="text-gray-600 mt-1">Ada. Kamu bisa mulai tanpa bayar.</p>
           </div>
+          <div className="p-6 border rounded-xl">
+            <h4 className="font-semibold">Apakah dapat sertifikat?</h4>
+            <p className="text-gray-600 mt-1">Ya, setelah menyelesaikan kursus & lulus kuis.</p>
+          </div>
+          <div className="p-6 border rounded-xl">
+            <h4 className="font-semibold">Apakah ada kelas gratis?</h4>
+            <p className="text-gray-600 mt-1">Ada. Kamu bisa mulai tanpa bayar.</p>
+          </div>
         </div>
       </section>
     </main>
