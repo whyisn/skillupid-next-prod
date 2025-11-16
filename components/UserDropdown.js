@@ -29,7 +29,7 @@ export default function UserDropdown({ displayName, avatarUrl }) {
         onClick={toggleDropdown}
         className="flex items-center gap-2 font-medium text-sm text-gray-700 hover:text-black"
       >
-        <span>Hai, {firstName}</span>
+        <span className="font-bold text-black">Hai, {firstName}</span>
         
         {/* --- Mengganti dengan Ikon Lucide --- */}
         <ChevronDown

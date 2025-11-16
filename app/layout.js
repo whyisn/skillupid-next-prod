@@ -1,7 +1,8 @@
 import './globals.css'
 //Import image
 import Image from 'next/image'; 
-import LogoImage from '../assets/logo.png'; 
+import LogoImage from '../assets/logo.png';
+import Link from 'next/link'; // <-- 1. Impor komponen Link
 
 // Tambahan: tombol Auth (client component)
 import AuthButtons from "@/components/AuthButtons";
@@ -20,7 +21,7 @@ export default function RootLayout({ children }) {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
             
             {/* Logo SkillUpID */}
-            <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <Image
                   src={LogoImage}
                   alt="SkillUpID Logo"
@@ -32,14 +33,14 @@ export default function RootLayout({ children }) {
                 <span className="text-gray-900 text-xl">SkillUp</span>
                 <span className="text-[#1ABC9C] text-xl">ID</span>
               </span>
-            </div>
+            </Link>
             
             <div className="hidden md:flex items-center gap-4">
               <nav className="flex items-center gap-6 text-sm text-gray-700">
-                <a href="#catalog" className="hover:text-black">Katalog</a>
-                <a href="#pricing" className="hover:text-black">Harga</a>
-                <a href="#faq" className="hover:text-black">FAQ</a>
                 <a href="/dashboard" className="hover:text-black">Dashboard</a>
+                <a href="/catalog" className="hover:text-black">Katalog</a>
+                <a href="/#pricing" className="hover:text-black">Model</a>
+                <a href="/#faq" className="hover:text-black">FAQ</a>
               </nav>
               <AuthButtons />
             </div>

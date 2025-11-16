@@ -176,12 +176,7 @@ export default async function Home() {
           <h2 className="text-3xl font-bold text-gray-900">
             Kursus Pilihan untukmu
           </h2>
-          <a
-            href="/dashboard"
-            className="text-sm font-medium text-[#1ABC9C] hover:underline"
-          >
-            Lihat Semua →
-          </a>
+          <a href="/catalog"className="text-sm font-medium text-[#1ABC9C] hover:underline">Lihat Semua →</a>
         </div>
 
         {!courses || courses.length === 0 ? (
@@ -238,7 +233,7 @@ export default async function Home() {
               <li className="flex items-center"><CheckCircle className="w-5 h-5 text-green-500 mr-2" /> Akses kuis interaktif</li>
             </ul>
             <div className="mt-8">
-              <a href="/auth/sign-in" className="block w-full text-center px-6 py-3 rounded-xl border border-gray-300 font-bold text-gray-800 hover:bg-gray-50 transition">
+              <a href="/catalog?filter=gratis" className="block w-full text-center px-6 py-3 rounded-xl border border-gray-300 font-bold text-gray-800 hover:bg-gray-50 transition">
                 Mulai Belajar Sekarang
               </a>
             </div>
@@ -256,7 +251,7 @@ export default async function Home() {
               <li className="flex items-center"><CheckCircle className="w-5 h-5 text-yellow-300 mr-2" /> Akses kuis interaktif</li>
             </ul>
             <div className="mt-8">
-              <a href="#catalog" className="block w-full text-center px-6 py-3 rounded-xl bg-white text-[#1ABC9C] font-bold shadow-md hover:bg-gray-100 transition">
+              <a href="/catalog?filter=premium" className="block w-full text-center px-6 py-3 rounded-xl bg-white text-[#1ABC9C] font-bold shadow-md hover:bg-gray-100 transition">
                 Lihat Kursus Premium
               </a>
             </div>
