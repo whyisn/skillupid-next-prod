@@ -60,7 +60,7 @@ export default function CatalogClient({ courses, activeFilter }) {
         </div>
       ) : (
         <div className="text-center text-gray-500 py-16">
-          <p>Tidak ada kursus yang ditemukan untuk filter "{activeFilter}".</p>
+          <p>Tidak ada kursus yang ditemukan untuk filter &quot;{activeFilter}&quot;.</p>
         </div>
       )}
     </div>
