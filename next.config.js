@@ -6,15 +6,19 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com', // <-- Domain Anda yang sudah ada
+        hostname: 'images.unsplash.com',
       },
       {
         protocol: 'https',
-        hostname: 'gneffrsbfjajsipxogqt.supabase.co', // <-- Untuk avatar Supabase
+        hostname: 'gneffrsbfjajsipxogqt.supabase.co', // <-- Avatar Supabase
       },
       {
         protocol: 'https',
-        hostname: 'api.dicebear.com', // <-- Untuk avatar fallback
+        hostname: 'api.dicebear.com', // <-- Avatar fallback
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com', // <-- TAMBAHKAN INI (Untuk Google Login)
       },
     ],
   },
