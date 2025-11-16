@@ -1,10 +1,6 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/auth/sign-in/page": "app/auth/sign-in/page.js",
-  "/page": "app/page.js",
-  "/catalog/page": "app/catalog/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/checkout/route": "app/api/checkout/route.js",
   "/courses/[id]/page": "app/courses/[id]/page.js",
-  "/api/enroll/route": "app/api/enroll/route.js",
-  "/learn/[courseId]/page": "app/learn/[courseId]/page.js",
-  "/api/video/signed/[playbackId]/route": "app/api/video/signed/[playbackId]/route.js"
+  "/page": "app/page.js"
 }
