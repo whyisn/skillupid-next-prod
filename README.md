@@ -12,7 +12,7 @@ npm run dev
 ## Deploy
 - **Next.js**: Vercel (isi semua env di Project Settings).  
 - **Supabase**: buat project, jalankan `db/schema.sql` di SQL editor, buat Storage bucket `certificates`.  
-- **Payments**: set webhook Midtrans ke `https://YOUR_APP.vercel.app/api/webhooks/midtrans`.
+- **Payments**: set webhook Midtrans ke `https://skillupid.vercel.app/api/webhooks/midtrans`.
 
 ## ENV yang penting
 Lihat **.env.example**. Minimal untuk fitur produksi:
