@@ -1,6 +1,6 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/checkout/route": "app/api/checkout/route.js",
+  "/catalog/page": "app/catalog/page.js",
   "/courses/[id]/page": "app/courses/[id]/page.js",
-  "/page": "app/page.js"
+  "/api/enroll/route": "app/api/enroll/route.js",
+  "/dashboard/page": "app/dashboard/page.js"
 }

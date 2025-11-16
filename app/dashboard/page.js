@@ -1,8 +1,14 @@
-// Di file app/dashboard/page.js (atau file Server Component yang memanggil DashboardClient)
+// app/dashboard/page.js
+
+// === [PERBAIKAN DI SINI] ===
+// Baris ini memaksa Next.js untuk selalu me-render halaman ini di server
+// setiap kali diminta (sama seperti getServerSideProps).
+export const dynamic = 'force-dynamic';
+// ==========================
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import DashboardClient from "./DashboardClient"; // <-- Impor komponen client
+import DashboardClient from "./DashboardClient";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -13,7 +19,7 @@ export default async function DashboardPage() {
     redirect("/auth/sign-in");
   }
 
-  // 2. Ambil data profil (LOGIKA BARU YANG PERLU DITAMBAH)
+  // 2. Ambil data profil
   let profile = null;
   const { data: profA } = await supabase
     .from("profiles")
@@ -32,9 +38,24 @@ export default async function DashboardPage() {
     if (profB) profile = profB;
   }
 
-  // 3. Tentukan nama
   const displayName = profile?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "User";
 
-  // 4. Kirim 'displayName' ke client, BUKAN 'userEmail'
-  return <DashboardClient userDisplayName={displayName} />;
+  // 3. Ambil data kursus yang di-enroll user
+  // Query ini sekarang akan dijamin selalu mengambil data terbaru
+  const { data: enrollments } = await supabase
+    .from("enrollments")
+    .select(`
+      id,
+      progress_percent, 
+      courses ( id, title, thumbnail_url )
+    `)
+    .eq("user_id", user.id);
+
+  // 4. Kirim 'displayName' DAN 'enrollments' ke client
+  return (
+    <DashboardClient 
+      userDisplayName={displayName} 
+      initialEnrollments={enrollments || []}
+    />
+  );
 }
