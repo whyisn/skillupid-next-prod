@@ -1,67 +1,40 @@
-// 'use client';
-// import { useEffect, useState } from 'react';
-// import { Card } from '../../components/ui';
+// Di file app/dashboard/page.js (atau file Server Component yang memanggil DashboardClient)
 
-// export default function Dashboard(){
-//   const [progress, setProgress] = useState([
-//     { id:'c3', title: 'Excel Dasar', percent: 60 },
-//     { id:'c2', title: 'IG Marketing', percent: 20 },
-//     { id:'c6', title: 'AI Tools untuk Riset', percent: 0 },
-//   ]);
-
-//   return (
-//     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-//       <div className="flex items-center justify-between mb-6">
-//         <h2 className="text-2xl font-bold">Dashboard</h2>
-//         <div className="flex items-center gap-2">
-//           <select className="rounded-xl border border-gray-300 p-2 text-sm">
-//             <option>Semua</option>
-//             <option>Berjalan</option>
-//             <option>Selesai</option>
-//           </select>
-//           <button className="rounded-2xl px-4 py-2 border border-gray-300">Unduh Sertifikat</button>
-//         </div>
-//       </div>
-//       <div className="grid md:grid-cols-3 gap-6">
-//         {progress.map(c => (
-//           <Card key={c.id} className="p-4">
-//             <div className="flex items-center justify-between">
-//               <h3 className="font-semibold">{c.title}</h3>
-//               <span className="text-sm text-gray-600">{c.percent}%</span>
-//             </div>
-//             <div className="w-full bg-gray-200 h-2 rounded-full mt-2">
-//               <div className="h-2 bg-black rounded-full" style={{ width: `${c.percent}%` }} />
-//             </div>
-//             <div className="mt-3 flex items-center gap-2">
-//               <button className="rounded-xl px-3 py-2 bg-black text-white text-sm">Lanjutkan</button>
-//               <button className="rounded-xl px-3 py-2 border border-gray-300 text-sm">Detail</button>
-//             </div>
-//           </Card>
-//         ))}
-//       </div>
-//     </main>
-//   );
-// }
-
-// app/dashboard/page.js
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import DashboardClient from "./DashboardClient";
+import { redirect } from "next/navigation";
+import DashboardClient from "./DashboardClient"; // <-- Impor komponen client
 
-export default async function Dashboard() {
-  const supabase = createClient(); // read-only
-  let user = null;
+export default async function DashboardPage() {
+  const supabase = createClient();
 
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    if (!error) user = data?.user ?? null;
-  } catch {
-    user = null; // treat as unauthenticated (no refresh token)
-  }
-
+  // 1. Ambil data user
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    redirect(`/auth/sign-in?redirect=${encodeURIComponent("/dashboard")}`);
+    redirect("/auth/sign-in");
   }
 
-  return <DashboardClient userEmail={user.email} />;
+  // 2. Ambil data profil (LOGIKA BARU YANG PERLU DITAMBAH)
+  let profile = null;
+  const { data: profA } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profA) profile = profA;
+
+  if (!profile) {
+    const { data: profB } = await supabase
+      .from("users") 
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (profB) profile = profB;
+  }
+
+  // 3. Tentukan nama
+  const displayName = profile?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "User";
+
+  // 4. Kirim 'displayName' ke client, BUKAN 'userEmail'
+  return <DashboardClient userDisplayName={displayName} />;
 }

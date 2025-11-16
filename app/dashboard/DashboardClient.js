@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import { Card } from '../../components/ui';
 
-export default function DashboardClient({ userEmail }) {
+// 1. Terima 'userDisplayName' (bukan 'userEmail' lagi)
+export default function DashboardClient({ userDisplayName }) {
   const [progress] = useState([
     { id: 'c3', title: 'Excel Dasar', percent: 60 },
     { id: 'c2', title: 'IG Marketing', percent: 20 },
@@ -15,7 +16,11 @@ export default function DashboardClient({ userEmail }) {
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Dashboard</h2>
-        <div className="text-sm text-gray-500">Masuk sebagai <span className="font-medium">{userEmail}</span></div>
+
+        {/* 2. Gunakan 'userDisplayName' di sini */}
+        <div className="text-sm text-gray-500">
+          Selamat Datang Kembali, <span className="font-bold text-black">{userDisplayName}</span>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 mb-6">

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import LogoImage from '../assets/logo.png'; 
 
 // Tambahan: tombol Auth (client component)
-import { AuthButtons } from '@/components/AuthButtons'
+import AuthButtons from "@/components/AuthButtons";
 
 export const metadata = {
   title: 'SkillUpID',
