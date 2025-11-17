@@ -1,8 +1,8 @@
-// File: D:\github\skillupid-next-prod\app\api\enroll\route.js
-import * as entry from '../../../../../app/api/enroll/route.js'
+// File: D:\github\skillupid-next-prod\app\api\logout\route.js
+import * as entry from '../../../../../app/api/logout/route.js'
 import type { NextRequest } from 'next/server.js'
 
-type TEntry = typeof import('../../../../../app/api/enroll/route.js')
+type TEntry = typeof import('../../../../../app/api/logout/route.js')
 
 // Check that the entry is a valid entry
 checkFields<Diff<{

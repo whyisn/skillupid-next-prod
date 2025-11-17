@@ -89,7 +89,7 @@ export default function UserDropdown({ displayName, avatarUrl }) {
 
           {/* 4. Logout Button */}
           <div className="p-2">
-            <form action="/auth/sign-out" method="post" className="w-full">
+            <form action="/api/logout" method="post" className="w-full">
               <button
                 type="submit"
                 className="flex items-center gap-3 w-full text-left px-3 py-2 hover:bg-gray-100 rounded-lg text-sm text-red-600 group"
