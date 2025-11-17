@@ -78,9 +78,11 @@ export default function EnrollActions({ course }) {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "Checkout gagal");
+    if (!res.ok) {
+      throw new Error(data?.error || "Checkout gagal");
+    }
 
-    // BACKEND mengirim { token, redirect_url }
+    // backend mengirim { token, redirect_url }
     if (data?.token) {
       // eslint-disable-next-line no-undef
       window.snap?.pay(data.token, {
@@ -100,6 +102,7 @@ export default function EnrollActions({ course }) {
     setLoading(false);
   }
 };
+
 
   // [TAMBAHAN] Helper 'formatRupiah' dibutuhkan untuk tombol premium
   // (Anda bisa menghapus ini jika Anda mengimpornya dari file lain)
