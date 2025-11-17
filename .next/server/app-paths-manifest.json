@@ -1,8 +1,0 @@
-{
-  "/dashboard/page": "app/dashboard/page.js",
-  "/courses/[id]/page": "app/courses/[id]/page.js",
-  "/page": "app/page.js",
-  "/api/checkout/route": "app/api/checkout/route.js",
-  "/catalog/page": "app/catalog/page.js",
-  "/learn/[courseId]/page": "app/learn/[courseId]/page.js"
-}
