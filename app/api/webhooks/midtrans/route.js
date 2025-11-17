@@ -69,13 +69,31 @@ export async function POST(req) {
 
   // Kalau pembayaran sukses → buat enrollment
   const successStatuses = ["capture", "settlement"];
-  if (payment && successStatuses.includes(transaction_status) && fraud_status !== "deny") {
-    // cek sudah pernah enroll atau belum (optional)
-    await admin
+  // if (payment && successStatuses.includes(transaction_status) && fraud_status !== "deny") {
+  //   // cek sudah pernah enroll atau belum (optional)
+  //   await admin
+  //     .from("enrollments")
+  //     .insert({ user_id: payment.user_id, course_id: payment.course_id })
+  //     .onConflict("user_id,course_id")
+  //     .ignore();
+  // }
+   if (payment && successStatuses.includes(transaction_status) && fraud_status !== "deny") {
+    const { error: enrollErr } = await admin
       .from("enrollments")
-      .insert({ user_id: payment.user_id, course_id: payment.course_id })
-      .onConflict("user_id,course_id")
-      .ignore();
+      .upsert(
+        {
+          user_id: payment.user_id,
+          course_id: payment.course_id,
+          status: "active",   // samakan dengan /api/enroll
+        },
+        {
+          onConflict: "user_id,course_id",
+        }
+      );
+
+    if (enrollErr) {
+      console.error("Enroll error:", enrollErr);
+    }
   }
 
   return NextResponse.json({ received: true });
