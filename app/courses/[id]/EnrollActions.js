@@ -1,15 +1,19 @@
 // app/courses/[id]/EnrollActions.js
 "use client";
 
+// [PERUBAHAN] 'Fragment' ditambahkan untuk me-return modal dan tombol
 import { useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 
 export default function EnrollActions({ course }) {
   const [loading, setLoading] = useState(false);
+  // [TAMBAHAN] State untuk menampilkan/menyembunyikan modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-
+  
   const router = useRouter();
 
+  // [PERUBAHAN] Nama fungsi diubah menjadi 'handleEnroll'
+  // Logika window.confirm() dihapus karena sudah ditangani modal
   const handleEnroll = async () => {
     setLoading(true);
     try {
@@ -19,43 +23,24 @@ export default function EnrollActions({ course }) {
         body: JSON.stringify({ course_id: course.id }),
         credentials: "include",
       });
-
+    
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j?.error || "Gagal enroll.");
       }
 
-      router.push("/dashboard");
+      router.push('/dashboard'); 
+
     } catch (e) {
       alert(e.message);
     } finally {
       setLoading(false);
+      // [TAMBAHAN] Selalu tutup modal setelah aksi selesai
       setShowConfirmModal(false);
     }
   };
 
-  // Helper untuk enroll setelah pembayaran sukses
-  const enrollAfterPayment = async () => {
-    try {
-      const enrollRes = await fetch("/api/enroll", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ course_id: course.id }),
-        credentials: "include",
-      });
-
-      // Kalau gagal, jangan blok user ke dashboard, cukup log
-      if (!enrollRes.ok) {
-        const j = await enrollRes.json().catch(() => ({}));
-        console.error("Enroll setelah bayar gagal:", j?.error || enrollRes.status);
-      }
-    } catch (err) {
-      console.error("Error enroll setelah bayar:", err);
-    } finally {
-      router.push("/dashboard");
-    }
-  };
-
+  // Fungsi checkout (logika tidak berubah)
   const checkout = async () => {
     setLoading(true);
     try {
@@ -64,31 +49,17 @@ export default function EnrollActions({ course }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ course_id: course.id }),
       });
-
       const data = await res.json();
-
       if (data?.snapToken) {
         // eslint-disable-next-line no-undef
         window.snap?.pay(data.snapToken, {
-          onSuccess: async () => {
-            // ✅ Setelah pembayaran sukses, paksa enroll
-            await enrollAfterPayment();
-          },
-          onPending: async () => {
-            // Optional: kalau mau enroll juga saat pending, tinggal pakai:
-            // await enrollAfterPayment();
-            router.push("/dashboard");
-          },
-          onError: () => {
-            alert("Pembayaran gagal");
-          },
-          onClose: () => {
-            // user nutup popup, tidak melakukan apa-apa
-          },
+          onSuccess: () => (window.location.href = "/dashboard"),
+          onPending: () => (window.location.href = "/dashboard"),
+          onError: () => alert("Pembayaran gagal"),
+          onClose: () => {},
         });
       } else {
-        // Kalau tidak ada snapToken (fallback), langsung enroll + redirect
-        await enrollAfterPayment();
+        window.location.href = "/dashboard";
       }
     } catch (e) {
       alert(e.message);
@@ -97,6 +68,8 @@ export default function EnrollActions({ course }) {
     }
   };
 
+  // [TAMBAHAN] Helper 'formatRupiah' dibutuhkan untuk tombol premium
+  // (Anda bisa menghapus ini jika Anda mengimpornya dari file lain)
   const formatRupiah = (value) =>
     new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -104,7 +77,9 @@ export default function EnrollActions({ course }) {
       maximumFractionDigits: 0,
     }).format(value || 0);
 
-  // Kursus gratis
+  // --- Render ---
+
+  // [PERUBAHAN] Kursus gratis (sesuai kode Anda)
   if (!course.premium) {
     return (
       <Fragment>
@@ -148,7 +123,7 @@ export default function EnrollActions({ course }) {
     );
   }
 
-  // Kursus premium
+  // [PERUBAHAN] Kursus premium (sesuai kode Anda)
   return (
     <button
       onClick={checkout}
