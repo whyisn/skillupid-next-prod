@@ -1,4 +1,5 @@
 import './globals.css'
+import Script from "next/script";
 //Import image
 import Image from 'next/image'; 
 import LogoImage from '../assets/logo.png';
@@ -77,6 +78,7 @@ export default function RootLayout({ children }) {
             </div>
           </div>
         </footer>
+        {/* Snap Midtrans */}
         <Script
           src="https://app.sandbox.midtrans.com/snap/snap.js"
           data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
