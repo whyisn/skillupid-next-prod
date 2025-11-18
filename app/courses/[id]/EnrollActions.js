@@ -41,32 +41,68 @@ export default function EnrollActions({ course }) {
   };
 
   // Fungsi checkout (logika tidak berubah)
+  // const checkout = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const res = await fetch("/api/checkout", {
+  //       method: "POST",
+  //       headers: { "content-type": "application/json" },
+  //       body: JSON.stringify({ course_id: course.id }),
+  //     });
+  //     const data = await res.json();
+  //     if (data?.snapToken) {
+  //       // eslint-disable-next-line no-undef
+  //       window.snap?.pay(data.snapToken, {
+  //         onSuccess: () => (window.location.href = "/dashboard"),
+  //         onPending: () => (window.location.href = "/dashboard"),
+  //         onError: () => alert("Pembayaran gagal"),
+  //         onClose: () => {},
+  //       });
+  //     } else {
+  //       window.location.href = "/dashboard";
+  //     }
+  //   } catch (e) {
+  //     alert(e.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const checkout = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ course_id: course.id }),
-      });
-      const data = await res.json();
-      if (data?.snapToken) {
-        // eslint-disable-next-line no-undef
-        window.snap?.pay(data.snapToken, {
-          onSuccess: () => (window.location.href = "/dashboard"),
-          onPending: () => (window.location.href = "/dashboard"),
-          onError: () => alert("Pembayaran gagal"),
-          onClose: () => {},
-        });
-      } else {
-        window.location.href = "/dashboard";
-      }
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ course_id: course.id }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error || "Checkout gagal");
     }
-  };
+
+    // backend mengirim { token, redirect_url }
+    if (data?.token) {
+      // eslint-disable-next-line no-undef
+      window.snap?.pay(data.token, {
+        onSuccess: () => (window.location.href = "/dashboard"),
+        onPending: () => (window.location.href = "/dashboard"),
+        onError: () => alert("Pembayaran gagal"),
+        onClose: () => {},
+      });
+    } else if (data?.redirect_url) {
+      window.location.href = data.redirect_url;
+    } else {
+      window.location.href = "/dashboard";
+    }
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // [TAMBAHAN] Helper 'formatRupiah' dibutuhkan untuk tombol premium
   // (Anda bisa menghapus ini jika Anda mengimpornya dari file lain)
