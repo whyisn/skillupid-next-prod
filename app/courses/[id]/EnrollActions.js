@@ -124,7 +124,7 @@ export default function EnrollActions({ course }) {
           disabled={loading}
           className="w-full px-5 py-3 rounded-xl bg-[#1ABC9C] text-white hover:bg-[#16a085] transition-colors"
         >
-          {loading ? "Memproses…" : "Mulai Gratis"}
+          {loading ? "Memproses…" : "Enroll"}
         </button>
 
         {showConfirmModal && (
