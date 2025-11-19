@@ -23,6 +23,13 @@ export default async function LearnPage({ params, searchParams }) {
     redirect(`/courses/${params.courseId}`);
   }
 
+  // Fetch Course Data (untuk Judul Sertifikat)
+  const { data: course } = await supabase
+    .from("courses")
+    .select("title")
+    .eq("id", params.courseId)
+    .maybeSingle();
+
   // 2. Ambil Modul
   const { data: modules } = await supabase
     .from("modules")
@@ -36,7 +43,7 @@ export default async function LearnPage({ params, searchParams }) {
   
   const moduleIds = modules.map(m => m.id);
 
-  // --- 3. Fetch Data untuk Progress & Locking ---
+  // --- 3. Fetch Progress & Submissions ---
   
   // A. Fetch Video Progress (percent)
   const { data: progressData } = await supabase
@@ -57,7 +64,7 @@ export default async function LearnPage({ params, searchParams }) {
     .in("quiz_id", moduleIds);
 
 
-  // --- 4. Tentukan Locked Modules (Logic GABUNGAN) ---
+  // --- 4. Tentukan Status Selesai (CompletedModuleIds) & Locking ---
   
   const completedModuleIds = new Set();
   
@@ -79,21 +86,25 @@ export default async function LearnPage({ params, searchParams }) {
       }
   });
 
+  // [BARU] Cek apakah SEMUA modul sudah selesai
+  const courseFullyComplete = modules.length > 0 && completedModuleIds.size === modules.length;
+
   // 4c. Tentukan daftar ID modul yang terkunci
   const lockedModuleIds = [];
   modules.forEach((mod, index) => {
     if (index === 0) return; // Modul pertama selalu terbuka
     const prevMod = modules[index - 1];
     
-    // Modul terkunci jika modul sebelumnya BELUM memenuhi syarat gabungan
     if (!completedModuleIds.has(prevMod.id)) {
       lockedModuleIds.push(mod.id);
     }
   });
 
+  // Ambil Nama User untuk Sertifikat (Fallback ke email)
+  const userName = user.user_metadata?.name || user.email?.split("@")[0] || 'Student';
+
 
   let activeId = searchParams?.m || modules[0].id;
-  // Jika modul yang diminta user terkunci, paksa ke modul pertama
   if (lockedModuleIds.includes(activeId)) {
     activeId = modules[0].id;
   }
@@ -105,7 +116,13 @@ export default async function LearnPage({ params, searchParams }) {
       modules={modules || []}
       activeModuleId={activeId}
       lockedModuleIds={lockedModuleIds}
-      initialProgress={initialProgress} // Kirim progress awal
+      initialProgress={initialProgress}
+      
+      // NEW PROPS FOR CERTIFICATE
+      user_id={user.id}
+      userName={userName}
+      courseTitle={course?.title || 'Course'}
+      courseFullyComplete={courseFullyComplete} // Kirim status kelulusan total
     />
   );
 }
