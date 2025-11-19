@@ -11,6 +11,7 @@ export default async function LearnPage({ params, searchParams }) {
     redirect(`/auth/sign-in?redirect=${encodeURIComponent(`/learn/${params.courseId}`)}`);
   }
 
+  // 1. Cek Enrollment
   const { data: enrollment } = await supabase
     .from("enrollments")
     .select("id")
@@ -22,6 +23,7 @@ export default async function LearnPage({ params, searchParams }) {
     redirect(`/courses/${params.courseId}`);
   }
 
+  // 2. Ambil Modul
   const { data: modules } = await supabase
     .from("modules")
     .select("id,title,order_no,video_provider,video_id,duration_seconds")
@@ -34,7 +36,9 @@ export default async function LearnPage({ params, searchParams }) {
   
   const moduleIds = modules.map(m => m.id);
 
-  // --- 1. Fetch Initial Progress (untuk Client State) ---
+  // --- 3. Fetch Data untuk Progress & Locking ---
+  
+  // A. Fetch Video Progress (percent)
   const { data: progressData } = await supabase
     .from("progress")
     .select("module_id, percent")
@@ -45,34 +49,51 @@ export default async function LearnPage({ params, searchParams }) {
     return acc;
   }, {}) || {};
   
-  // --- 2. Logic Locking (Berdasarkan Kelulusan Quiz) ---
-  
+  // B. Fetch Quiz Submissions (score)
   const { data: submissions } = await supabase
     .from("submissions")
     .select("quiz_id, score")
     .eq("user_id", user.id)
     .in("quiz_id", moduleIds);
 
-  const passedModuleIds = new Set();
-  if (submissions) {
-     submissions.forEach(s => {
-        // Kelulusan Quiz: minimal 4 benar
-        if (s.score >= 4) passedModuleIds.add(s.quiz_id);
-     });
-  }
 
+  // --- 4. Tentukan Locked Modules (Logic GABUNGAN) ---
+  
+  const completedModuleIds = new Set();
+  
+  // 4a. Buat map status kuis (Lulus jika Score >= 4)
+  const quizPassedMap = submissions?.reduce((acc, s) => {
+      if (s.score >= 4) {
+          acc[s.quiz_id] = true;
+      }
+      return acc;
+  }, {}) || {};
+
+  // 4b. Gabungkan Video (>= 80%) DAN Kuis Lulus
+  modules.forEach(mod => {
+      const isQuizPassed = quizPassedMap[mod.id] === true;
+      const isVideoComplete = (initialProgress[mod.id] || 0) >= 80; // Cek Video 80%
+
+      if (isQuizPassed && isVideoComplete) {
+          completedModuleIds.add(mod.id);
+      }
+  });
+
+  // 4c. Tentukan daftar ID modul yang terkunci
   const lockedModuleIds = [];
   modules.forEach((mod, index) => {
-    if (index === 0) return;
+    if (index === 0) return; // Modul pertama selalu terbuka
     const prevMod = modules[index - 1];
-    // Modul terkunci jika quiz modul sebelumnya BELUM LULUS
-    if (!passedModuleIds.has(prevMod.id)) {
+    
+    // Modul terkunci jika modul sebelumnya BELUM memenuhi syarat gabungan
+    if (!completedModuleIds.has(prevMod.id)) {
       lockedModuleIds.push(mod.id);
     }
   });
 
 
   let activeId = searchParams?.m || modules[0].id;
+  // Jika modul yang diminta user terkunci, paksa ke modul pertama
   if (lockedModuleIds.includes(activeId)) {
     activeId = modules[0].id;
   }

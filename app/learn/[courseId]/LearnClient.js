@@ -11,13 +11,22 @@ import { Lock, X } from "lucide-react";
 export default function LearnClient({ enrollmentId, courseId, modules, activeModuleId, lockedModuleIds = [], initialProgress = {} }) {
     const router = useRouter();
     const [currentId, setCurrentId] = useState(activeModuleId);
-    // [FIX PERSISTENSI] Inisialisasi state dengan data dari Server
+    // Inisialisasi state progress dengan data dari Server
     const [progress, setProgress] = useState(initialProgress); 
     const [checkingNext, setCheckingNext] = useState(false);
     const [showLockModal, setShowLockModal] = useState(false);
     const [lockReason, setLockReason] = useState({ video: false, quiz: false });
 
-    // ... (Logika Validasi URL & active/currentId tetap sama) ...
+    // Validasi URL hack (Tetap sama)
+    useEffect(() => {
+        if (lockedModuleIds.includes(currentId)) {
+            const firstModuleId = modules[0]?.id;
+            if (firstModuleId) {
+                setCurrentId(firstModuleId);
+                router.replace(`/learn/${courseId}?m=${firstModuleId}`);
+            }
+        }
+    }, [currentId, lockedModuleIds, courseId, modules, router]);
     
     const active = useMemo(
         () => modules.find((m) => m.id === currentId) || modules[0],
@@ -34,19 +43,17 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
     const handleProgressUpdate = async (timeEvent) => {
         if (!active || !timeEvent || !timeEvent.duration) return;
         
-        // Hitung persentase AKURAT dari event player
+        // Hitung persentase AKURAT
         let percent = Math.floor((timeEvent.currentTime / timeEvent.duration) * 100);
         
         const currentSaved = progress[active.id] || 0;
         
-        // Optimasi: Hanya update jika progress baru LEBIH BESAR
-        // dan hanya simpan setiap 5% atau lebih (atau jika melampaui 80% untuk sinkronisasi)
+        // Hanya update jika progress baru LEBIH BESAR
         if (percent > currentSaved) {
             
-            // Update state lokal
             setProgress((p) => ({ ...p, [active.id]: percent })); 
             
-            // Persist ke API (dengan logika optimasi pengiriman)
+            // Persist ke API (optimasi pengiriman setiap 5% atau saat mencapai 80%)
             if (percent % 5 === 0 || percent >= 80) {
               fetch("/api/progress", {
                   method: "POST",
@@ -64,7 +71,7 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
 
     const handleCompleted = async () => {
         if (!active) return;
-        // Logika ini tetap 100% untuk sinyal final (event 'onEnded' dari player)
+        // Sinyal final dari player
         setProgress((p) => ({ ...p, [active.id]: 100 }));
         
         fetch("/api/progress", {
@@ -76,7 +83,7 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
                 percent: 100, // Kirim status 100% final
             }),
         });
-        // Refresh router agar status lock (gembok) terupdate di sidebar
+        // Refresh router agar status lock (gembok) terupdate
         router.refresh();
     };
 
@@ -105,13 +112,14 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
 
         if (!next) return; 
 
-        // 1. Cek Video Completion (Syarat 80% untuk membuka modul)
+        // 1. Cek Video Completion (Syarat 80%)
         const isVideoCompleted = progress[active.id] >= 80; 
         
         setCheckingNext(true);
         try {
             const quizPassed = await checkQuizPassed(active.id);
 
+            // 2. [LOGIKA GABUNGAN] Jika SALAH SATU syarat tidak terpenuhi
             if (!isVideoCompleted || !quizPassed) {
                 
                 setLockReason({
@@ -140,10 +148,9 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-12 gap-6 relative">
-            {/* Modal Terkunci (Konten dan Logika tetap sama) */}
+            {/* Modal Terkunci (Konten Dinamis) */}
             {showLockModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    {/* ... (Modal JSX, menggunakan state lockReason untuk pesan dinamis) ... */}
                     <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative scale-100 animate-in zoom-in-95 duration-200">
                         <button 
                             onClick={() => setShowLockModal(false)}
@@ -205,7 +212,7 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
 
             <section className="col-span-12 md:col-span-8 lg:col-span-9">
                 {active?.video_provider === "mux" && active?.video_id ? (
-                    // [PERUBAHAN KRITIS] onTimeUpdate dipasang untuk tracking kontinu
+                    // Player dengan onTimeUpdate untuk tracking kontinu
                     <SignedMuxPlayer
                         playbackId={active.video_id}
                         onCompleted={handleCompleted}
@@ -226,14 +233,19 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
                         <span className="font-semibold text-black">{currentModuleProgress}%</span> 
                     </div>
                     <ProgressBar value={currentModuleProgress} /> 
-                                   
+                    
+                    {/* [DISPLAY INFO RATA-RATA KELAS] */}
+                    <div className="mt-2 text-xs text-gray-500 flex justify-between">
+                        <span>Progress Kelas Rata-rata ({modules.length} Modul)</span>
+                        <span className="font-semibold text-gray-700">{overallCourseProgress}%</span>
+                    </div>
+                    
                     <p className="text-[10px] text-gray-400 mt-1">
-                        *Dihitung berdasarkan durasi menonton video modul
+                        *Dihitung berdasarkan rata-rata progress video modul
                     </p>
                 </div>
 
                 <div className="mt-8 flex flex-wrap gap-3 border-t pt-6">
-                    {/* ... (Tombol Kuis dan Modul Berikutnya) ... */}
                     <a
                         href={`/quiz/${courseId}/${active?.id}`}
                         className="px-6 py-3 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-colors font-medium"
