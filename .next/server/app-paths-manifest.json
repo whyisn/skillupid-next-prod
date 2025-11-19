@@ -1,6 +1,7 @@
 {
   "/learn/[courseId]/page": "app/learn/[courseId]/page.js",
   "/cert/[code]/page": "app/cert/[code]/page.js",
-  "/api/video/signed/[playbackId]/route": "app/api/video/signed/[playbackId]/route.js",
-  "/api/certificates/issue/route": "app/api/certificates/issue/route.js"
+  "/page": "app/page.js",
+  "/quiz/[courseId]/[moduleId]/page": "app/quiz/[courseId]/[moduleId]/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
 }

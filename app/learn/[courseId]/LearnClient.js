@@ -18,7 +18,6 @@ export default function LearnClient({
     const [checkingNext, setCheckingNext] = useState(false);
     const [showLockModal, setShowLockModal] = useState(false);
     const [lockReason, setLockReason] = useState({ video: false, quiz: false });
-    // [BARU] State untuk membedakan jenis lock (Progression vs Certificate)
     const [isCertCheck, setIsCertCheck] = useState(false); 
 
 
@@ -72,7 +71,7 @@ export default function LearnClient({
     const checkQuizPassed = async (quizId) => {
         const res = await fetch(`/api/quiz/status?quiz_id=${encodeURIComponent(quizId)}`);
         const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "Gagal status kuis");
+        if (!res.ok) throw new Error(data?.error || "Gagal status quiz");
         return data?.passed === true;
     };
 
@@ -137,7 +136,6 @@ export default function LearnClient({
 
         setCheckingNext(true); 
         try {
-            // Panggil API untuk Menerbitkan Sertifikat
             const res = await fetch("/api/certificates/issue", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
@@ -183,25 +181,44 @@ export default function LearnClient({
                                 <Lock className="w-7 h-7 text-red-500" />
                             </div>
                             
-                            {/* [PERUBAHAN TEKS MODAL] Judul disesuaikan */}
+                            {/* Judul disesuaikan */}
                             <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                {isCertCheck ? 'Maaf, sertifikat belum bisa diunduh' : 'Maaf, modul terkunci'}
+                                {isCertCheck ? 'Sertifikat Belum Tersedia' : 'Modul Terkunci'}
                             </h3>
                             <p className="text-gray-600 text-sm leading-relaxed mb-4">
-                                {isCertCheck ? 'Anda harus menyelesaikan semua modul dan kuis.' : 'Untuk masuk ke modul berikutnya, Anda harus memenuhi :'}
+                                {isCertCheck ? 'Anda harus menyelesaikan semua modul dan quiz pada kelas ini' : 'Untuk masuk ke modul berikutnya, Anda harus:'}
                             </p>
                             
+                            {/* [PERUBAHAN LOGIKA LIST] List disesuaikan per konteks */}
                             <div className="w-full text-sm text-left space-y-2">
-                                <div className={`flex items-start gap-2 p-3 rounded-lg ${lockReason.video ? 'bg-red-50' : 'bg-green-50'}`}>
-                                    <span className={`font-semibold text-lg flex-shrink-0 ${lockReason.video ? 'text-red-600' : 'text-green-600'}`}>{lockReason.video ? '✕' : '✓'}</span>
-                                    <span className="text-gray-700">Tonton video hingga selesai **(minimal 80%)**.</span>
-                                </div>
-                                <div className={`flex items-start gap-2 p-3 rounded-lg ${lockReason.quiz ? 'bg-red-50' : 'bg-green-50'}`}>
-                                    <span className={`font-semibold text-lg flex-shrink-0 ${lockReason.quiz ? 'text-red-600' : 'text-green-600'}`}>{lockReason.quiz ? '✕' : '✓'}</span>
-                                    <span className="text-gray-700">Lulus kuis modul ini **(minimal 4 benar)**.</span>
-                                </div>
+                                {isCertCheck ? (
+                                    <>
+                                        {/* Syarat Sertifikat (Course Wide) */}
+                                        <div className={`flex items-start gap-2 p-3 rounded-lg ${lockReason.video ? 'bg-red-50' : 'bg-green-50'}`}>
+                                            <span className={`font-semibold text-lg flex-shrink-0 ${lockReason.video ? 'text-red-600' : 'text-green-600'}`}>{lockReason.video ? '✕' : '✓'}</span>
+                                            <span className="text-gray-700">Selesaikan seluruh modul pada course ini.</span>
+                                        </div>
+                                        <div className={`flex items-start gap-2 p-3 rounded-lg ${lockReason.quiz ? 'bg-red-50' : 'bg-green-50'}`}>
+                                            <span className={`font-semibold text-lg flex-shrink-0 ${lockReason.quiz ? 'text-red-600' : 'text-green-600'}`}>{lockReason.quiz ? '✕' : '✓'}</span>
+                                            <span className="text-gray-700">Lulus semua quiz pada course ini.</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Syarat Progresi (Current Module) */}
+                                        <div className={`flex items-start gap-2 p-3 rounded-lg ${lockReason.video ? 'bg-red-50' : 'bg-green-50'}`}>
+                                            <span className={`font-semibold text-lg flex-shrink-0 ${lockReason.video ? 'text-red-600' : 'text-green-600'}`}>{lockReason.video ? '✕' : '✓'}</span>
+                                            <span className="text-gray-700">Tonton video hingga selesai (minimal 80%).</span>
+                                        </div>
+                                        <div className={`flex items-start gap-2 p-3 rounded-lg ${lockReason.quiz ? 'bg-red-50' : 'bg-green-50'}`}>
+                                            <span className={`font-semibold text-lg flex-shrink-0 ${lockReason.quiz ? 'text-red-600' : 'text-green-600'}`}>{lockReason.quiz ? '✕' : '✓'}</span>
+                                            <span className="text-gray-700">Lulus quis modul ini (minimal 4 benar).</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                             
+                            {/* Tombol Aksi Modal */}
                             <div className="mt-6 w-full grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setShowLockModal(false)}
@@ -210,6 +227,7 @@ export default function LearnClient({
                                     Tutup
                                 </button>
                                 <a
+                                    // Arahkan ke Quiz jika Quiz gagal, atau Lanjutkan Video jika hanya Video yang gagal
                                     href={lockReason.quiz ? `/quiz/${courseId}/${active?.id}` : '#'} 
                                     onClick={() => !lockReason.quiz && setShowLockModal(false)} 
                                     className={`px-4 py-2.5 rounded-xl text-white font-medium transition-colors flex items-center justify-center ${lockReason.quiz ? 'bg-black hover:bg-gray-900' : 'bg-[#1ABC9C] hover:bg-[#16a085]'}`}
@@ -251,13 +269,13 @@ export default function LearnClient({
                 
                 <div className="mt-4">
                     <div className="flex justify-between text-sm mb-1 text-gray-600">
-                        <span>Progress Modul Saat Ini</span> 
+                        <span>Progress Modul</span> 
                         <span className="font-semibold text-black">{currentModuleProgress}%</span> 
                     </div>
                     <ProgressBar value={currentModuleProgress} /> 
                     
                     <div className="mt-2 text-xs text-gray-500 flex justify-between">
-                        <span>Progress Kelas Rata-rata ({modules.length} Modul)</span>
+                        <span>Progress Kelas</span>
                         <span className="font-semibold text-gray-700">{overallCourseProgress}%</span>
                     </div>
                     
@@ -272,14 +290,13 @@ export default function LearnClient({
                         href={`/quiz/${courseId}/${active?.id}`}
                         className="px-6 py-3 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-colors font-medium"
                     >
-                        Mulai Kuis
+                        Quiz
                     </a>
                     
                     {/* [KONDISIONAL TOMBOL KANAN] */}
                     {isLastModule ? (
                         <button
                             onClick={handleDownloadCertificate}
-                            // Tombol tidak disabled kecuali saat memproses API
                             disabled={checkingNext}
                             className={`px-6 py-3 rounded-xl text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${courseFullyComplete ? 'bg-[#1ABC9C] hover:bg-[#16a085]' : 'bg-gray-400'}`}
                         >
