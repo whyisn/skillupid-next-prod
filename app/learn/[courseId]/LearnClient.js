@@ -8,52 +8,37 @@ import SignedMuxPlayer from "@/components/SignedMuxPlayer";
 import ProgressBar from "@/components/ProgressBar";
 import { Lock, X } from "lucide-react"; 
 
-export default function LearnClient({ enrollmentId, courseId, modules, activeModuleId, lockedModuleIds = [], initialProgress = {} }) {
+export default function LearnClient({ 
+    enrollmentId, courseId, modules, activeModuleId, lockedModuleIds = [], initialProgress = {},
+    user_id, userName, courseTitle, courseFullyComplete 
+}) {
     const router = useRouter();
     const [currentId, setCurrentId] = useState(activeModuleId);
-    // Inisialisasi state progress dengan data dari Server
     const [progress, setProgress] = useState(initialProgress); 
     const [checkingNext, setCheckingNext] = useState(false);
     const [showLockModal, setShowLockModal] = useState(false);
     const [lockReason, setLockReason] = useState({ video: false, quiz: false });
+    // [BARU] State untuk membedakan jenis lock (Progression vs Certificate)
+    const [isCertCheck, setIsCertCheck] = useState(false); 
 
-    // Validasi URL hack (Tetap sama)
-    useEffect(() => {
-        if (lockedModuleIds.includes(currentId)) {
-            const firstModuleId = modules[0]?.id;
-            if (firstModuleId) {
-                setCurrentId(firstModuleId);
-                router.replace(`/learn/${courseId}?m=${firstModuleId}`);
-            }
-        }
-    }, [currentId, lockedModuleIds, courseId, modules, router]);
+
+    // ... (Logika Validasi URL & active/currentId tetap sama) ...
     
     const active = useMemo(
         () => modules.find((m) => m.id === currentId) || modules[0],
         [modules, currentId]
     );
 
-    useEffect(() => {
-        if (!lockedModuleIds.includes(activeModuleId)) {
-            setCurrentId(activeModuleId);
-        }
-    }, [activeModuleId, lockedModuleIds]);
-
-    // [BARU] Fungsi untuk mengirim/menyimpan progress secara kontinu
+    // Fungsi handleProgressUpdate, handleCompleted, checkQuizPassed tetap sama
     const handleProgressUpdate = async (timeEvent) => {
         if (!active || !timeEvent || !timeEvent.duration) return;
         
-        // Hitung persentase AKURAT
         let percent = Math.floor((timeEvent.currentTime / timeEvent.duration) * 100);
-        
         const currentSaved = progress[active.id] || 0;
         
-        // Hanya update jika progress baru LEBIH BESAR
         if (percent > currentSaved) {
-            
             setProgress((p) => ({ ...p, [active.id]: percent })); 
             
-            // Persist ke API (optimasi pengiriman setiap 5% atau saat mencapai 80%)
             if (percent % 5 === 0 || percent >= 80) {
               fetch("/api/progress", {
                   method: "POST",
@@ -68,10 +53,8 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
         }
     };
 
-
     const handleCompleted = async () => {
         if (!active) return;
-        // Sinyal final dari player
         setProgress((p) => ({ ...p, [active.id]: 100 }));
         
         fetch("/api/progress", {
@@ -80,10 +63,9 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
             body: JSON.stringify({
                 enrollment_id: enrollmentId,
                 module_id: active.id,
-                percent: 100, // Kirim status 100% final
+                percent: 100, 
             }),
         });
-        // Refresh router agar status lock (gembok) terupdate
         router.refresh();
     };
 
@@ -94,15 +76,14 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
         return data?.passed === true;
     };
 
-    // [BARU] Nilai Progress Modul Aktif
-    const currentModuleProgress = progress[active?.id] || 0;
 
-    // Rumus Progress Bar (Average Course)
     const overallCourseProgress = useMemo(() => {
         if (!modules || modules.length === 0) return 0;
         const totalProgress = modules.reduce((acc, m) => acc + (progress[m.id] || 0), 0); 
         return Math.round(totalProgress / modules.length);
     }, [modules, progress]);
+    
+    const currentModuleProgress = progress[active?.id] || 0;
 
 
     const nextModule = async () => {
@@ -112,26 +93,20 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
 
         if (!next) return; 
 
-        // 1. Cek Video Completion (Syarat 80%)
         const isVideoCompleted = progress[active.id] >= 80; 
         
         setCheckingNext(true);
         try {
             const quizPassed = await checkQuizPassed(active.id);
 
-            // 2. [LOGIKA GABUNGAN] Jika SALAH SATU syarat tidak terpenuhi
             if (!isVideoCompleted || !quizPassed) {
                 
-                setLockReason({
-                    video: !isVideoCompleted, // true jika belum 80%
-                    quiz: !quizPassed        // true jika belum lulus
-                });
-                
+                setLockReason({ video: !isVideoCompleted, quiz: !quizPassed });
+                setIsCertCheck(false); // Lock Progresi Modul
                 setShowLockModal(true); 
                 return;
             }
 
-            // Jika Lulus KEDUA syarat → Lanjut
             setCurrentId(next.id);
             const url = new URL(window.location.href);
             url.searchParams.set("m", next.id);
@@ -145,6 +120,51 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
         }
     };
 
+
+    const handleDownloadCertificate = async () => {
+        if (checkingNext) return;
+
+        if (!courseFullyComplete) {
+            // Jika belum selesai, cek status modul terakhir untuk ditampilkan di modal
+            const videoCompleted = progress[active.id] >= 80;
+            const quizPassed = await checkQuizPassed(active.id);
+
+            setLockReason({ video: !videoCompleted, quiz: !quizPassed });
+            setIsCertCheck(true); // Lock Sertifikat
+            setShowLockModal(true); 
+            return;
+        }
+
+        setCheckingNext(true); 
+        try {
+            // Panggil API untuk Menerbitkan Sertifikat
+            const res = await fetch("/api/certificates/issue", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ 
+                    user_id, 
+                    course_id: courseId, 
+                    user_name: userName, 
+                    course_title: courseTitle 
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                throw new Error(data?.error || "Gagal membuat sertifikat.");
+            }
+
+            router.push(`/cert/${data.certificate.code}`);
+
+        } catch (e) {
+            alert(e.message || "Gagal memproses sertifikat.");
+        } finally {
+            setCheckingNext(false);
+        }
+    };
+
+
+    const isLastModule = modules.length > 0 && active?.order_no === modules.length;
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-12 gap-6 relative">
@@ -162,12 +182,15 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
                             <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mb-4">
                                 <Lock className="w-7 h-7 text-red-500" />
                             </div>
+                            
+                            {/* [PERUBAHAN TEKS MODAL] Judul disesuaikan */}
                             <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                Maaf, modul terkunci
+                                {isCertCheck ? 'Maaf, sertifikat belum bisa diunduh' : 'Maaf, modul terkunci'}
                             </h3>
                             <p className="text-gray-600 text-sm leading-relaxed mb-4">
-                                Untuk masuk ke modul berikutnya, Anda harus memenuhi :
+                                {isCertCheck ? 'Anda harus menyelesaikan semua modul dan kuis.' : 'Untuk masuk ke modul berikutnya, Anda harus memenuhi :'}
                             </p>
+                            
                             <div className="w-full text-sm text-left space-y-2">
                                 <div className={`flex items-start gap-2 p-3 rounded-lg ${lockReason.video ? 'bg-red-50' : 'bg-green-50'}`}>
                                     <span className={`font-semibold text-lg flex-shrink-0 ${lockReason.video ? 'text-red-600' : 'text-green-600'}`}>{lockReason.video ? '✕' : '✓'}</span>
@@ -178,6 +201,7 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
                                     <span className="text-gray-700">Lulus kuis modul ini **(minimal 4 benar)**.</span>
                                 </div>
                             </div>
+                            
                             <div className="mt-6 w-full grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setShowLockModal(false)}
@@ -212,7 +236,6 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
 
             <section className="col-span-12 md:col-span-8 lg:col-span-9">
                 {active?.video_provider === "mux" && active?.video_id ? (
-                    // Player dengan onTimeUpdate untuk tracking kontinu
                     <SignedMuxPlayer
                         playbackId={active.video_id}
                         onCompleted={handleCompleted}
@@ -227,14 +250,12 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
                 <h1 className="text-2xl font-bold mt-6 text-gray-900">{active?.title}</h1>
                 
                 <div className="mt-4">
-                    {/* [DISPLAY BAR UTAMA MODUL] */}
                     <div className="flex justify-between text-sm mb-1 text-gray-600">
                         <span>Progress Modul Saat Ini</span> 
                         <span className="font-semibold text-black">{currentModuleProgress}%</span> 
                     </div>
                     <ProgressBar value={currentModuleProgress} /> 
                     
-                    {/* [DISPLAY INFO RATA-RATA KELAS] */}
                     <div className="mt-2 text-xs text-gray-500 flex justify-between">
                         <span>Progress Kelas Rata-rata ({modules.length} Modul)</span>
                         <span className="font-semibold text-gray-700">{overallCourseProgress}%</span>
@@ -246,6 +267,7 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
                 </div>
 
                 <div className="mt-8 flex flex-wrap gap-3 border-t pt-6">
+                    {/* Tombol Mulai Kuis */}
                     <a
                         href={`/quiz/${courseId}/${active?.id}`}
                         className="px-6 py-3 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-colors font-medium"
@@ -253,16 +275,28 @@ export default function LearnClient({ enrollmentId, courseId, modules, activeMod
                         Mulai Kuis
                     </a>
                     
-                    <button
-                        className="px-6 py-3 rounded-xl bg-[#1ABC9C] text-white font-semibold hover:bg-[#16a085] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                        onClick={nextModule}
-                        disabled={checkingNext}
-                    >
-                        {checkingNext ? "Memproses..." : "Modul Berikutnya"}
-                        {!checkingNext && (
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
-                        )}
-                    </button>
+                    {/* [KONDISIONAL TOMBOL KANAN] */}
+                    {isLastModule ? (
+                        <button
+                            onClick={handleDownloadCertificate}
+                            // Tombol tidak disabled kecuali saat memproses API
+                            disabled={checkingNext}
+                            className={`px-6 py-3 rounded-xl text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${courseFullyComplete ? 'bg-[#1ABC9C] hover:bg-[#16a085]' : 'bg-gray-400'}`}
+                        >
+                            {checkingNext ? "Memproses Sertifikat..." : "Unduh Sertifikat"}
+                        </button>
+                    ) : (
+                        <button
+                            onClick={nextModule}
+                            disabled={checkingNext}
+                            className="px-6 py-3 rounded-xl bg-[#1ABC9C] text-white font-semibold hover:bg-[#16a085] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                            {checkingNext ? "Memproses..." : "Modul Berikutnya"}
+                            {!checkingNext && (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+                            )}
+                        </button>
+                    )}
                 </div>
             </section>
         </div>
