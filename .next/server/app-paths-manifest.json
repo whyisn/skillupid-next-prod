@@ -1,7 +1,3 @@
 {
-  "/cert/[code]/page": "app/cert/[code]/page.js",
-  "/settings/page": "app/settings/page.js",
-  "/profile/page": "app/profile/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/learn/[courseId]/page": "app/learn/[courseId]/page.js"
+  "/cert/[code]/page": "app/cert/[code]/page.js"
 }

@@ -6,7 +6,7 @@ export default async function CertVerify({ params }) {
 
   const { data: cert } = await supabase
     .from("certificates")
-    .select("id,code,user_id,course_id,pdf_url,issued_at, users:users(name), course:courses(title)")
+    .select("id,code,user_id,course_id,pdf_url,issued_at, profile:profiles(full_name), course:courses(title)")
     .eq("code", params.code)
     .maybeSingle();
 
@@ -20,7 +20,7 @@ export default async function CertVerify({ params }) {
         <h1 className="text-2xl font-bold mb-4">Verifikasi Sertifikat</h1>
         <div className="space-y-2 text-gray-700">
           <div><span className="font-medium">Kode:</span> {cert.code}</div>
-          <div><span className="font-medium">Nama:</span> {cert.users?.name || cert.user_id}</div>
+          <div><span className="font-medium">Nama:</span> {cert.profile?.full_name || cert.user_id}</div>
           <div><span className="font-medium">Kursus:</span> {cert.course?.title || cert.course_id}</div>
           <div><span className="font-medium">Terbit:</span> {new Date(cert.issued_at).toLocaleDateString("id-ID")}</div>
         </div>
