@@ -11,7 +11,6 @@ export default async function LearnPage({ params, searchParams }) {
     redirect(`/auth/sign-in?redirect=${encodeURIComponent(`/learn/${params.courseId}`)}`);
   }
 
-  // 1. Pastikan enroll
   const { data: enrollment } = await supabase
     .from("enrollments")
     .select("id")
@@ -23,7 +22,6 @@ export default async function LearnPage({ params, searchParams }) {
     redirect(`/courses/${params.courseId}`);
   }
 
-  // 2. Ambil semua modul
   const { data: modules } = await supabase
     .from("modules")
     .select("id,title,order_no,video_provider,video_id,duration_seconds")
@@ -33,46 +31,48 @@ export default async function LearnPage({ params, searchParams }) {
   if (!modules || modules.length === 0) {
     return <div>Belum ada modul.</div>;
   }
-
-  // --- LOGIKA GEMBOK (LOCKING) ---
   
-  // 3. Ambil daftar quiz yang SUDAH LULUS (passed = true) oleh user ini
-  const { data: passedSubmissions } = await supabase
+  const moduleIds = modules.map(m => m.id);
+
+  // --- 1. Fetch Initial Progress (untuk Client State) ---
+  const { data: progressData } = await supabase
+    .from("progress")
+    .select("module_id, percent")
+    .eq("enrollment_id", enrollment.id); 
+
+  const initialProgress = progressData?.reduce((acc, p) => {
+    acc[p.module_id] = p.percent;
+    return acc;
+  }, {}) || {};
+  
+  // --- 2. Logic Locking (Berdasarkan Kelulusan Quiz) ---
+  
+  const { data: submissions } = await supabase
     .from("submissions")
-    .select("quiz_id")
+    .select("quiz_id, score")
     .eq("user_id", user.id)
-    .eq("passed", true);
+    .in("quiz_id", moduleIds);
 
-  // Buat Set ID modul yang sudah lulus supaya gampang dicek
-  const passedModuleIds = new Set(passedSubmissions?.map((s) => s.quiz_id) || []);
+  const passedModuleIds = new Set();
+  if (submissions) {
+     submissions.forEach(s => {
+        // Kelulusan Quiz: minimal 4 benar
+        if (s.score >= 4) passedModuleIds.add(s.quiz_id);
+     });
+  }
 
-  // 4. Tentukan mana modul yang TERKUNCI
-  // Aturan: Modul ke-N terbuka jika Modul ke-(N-1) sudah ada di passedModuleIds.
-  // Modul pertama (index 0) SELALU terbuka.
-  
   const lockedModuleIds = [];
-
   modules.forEach((mod, index) => {
-    if (index === 0) {
-      // Modul pertama selalu terbuka
-      return;
-    }
-    
-    // Cek modul sebelumnya
+    if (index === 0) return;
     const prevMod = modules[index - 1];
-    
-    // Jika modul sebelumnya BELUM lulus, maka modul ini (dan seterusnya) TERKUNCI
+    // Modul terkunci jika quiz modul sebelumnya BELUM LULUS
     if (!passedModuleIds.has(prevMod.id)) {
       lockedModuleIds.push(mod.id);
     }
   });
 
-  // -------------------------------
 
-  // Tentukan active module (default ke modul pertama jika tidak ada param)
   let activeId = searchParams?.m || modules[0].id;
-
-  // Security: Jika user mencoba akses modul terkunci via URL, paksa pindah ke modul pertama
   if (lockedModuleIds.includes(activeId)) {
     activeId = modules[0].id;
   }
@@ -83,7 +83,8 @@ export default async function LearnPage({ params, searchParams }) {
       courseId={params.courseId}
       modules={modules || []}
       activeModuleId={activeId}
-      lockedModuleIds={lockedModuleIds} // <-- Kirim data lock ke client
+      lockedModuleIds={lockedModuleIds}
+      initialProgress={initialProgress} // Kirim progress awal
     />
   );
 }

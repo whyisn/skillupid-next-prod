@@ -1,10 +1,11 @@
 // components/SignedMuxPlayer.js
 "use client";
-import { useEffect, useState, useRef } from "react"; // 1. Tambahkan useRef
+import { useEffect, useState, useRef } from "react"; 
 
-export default function SignedMuxPlayer({ playbackId, onCompleted }) {
+// [PERUBAHAN KRITIS] Tambahkan onTimeUpdate di props
+export default function SignedMuxPlayer({ playbackId, onCompleted, onTimeUpdate }) {
   const [src, setSrc] = useState(null);
-  const videoRef = useRef(null); // 2. Buat ref untuk elemen video
+  const videoRef = useRef(null); 
 
   useEffect(() => {
     let mounted = true;
@@ -14,25 +15,25 @@ export default function SignedMuxPlayer({ playbackId, onCompleted }) {
     return () => { mounted = false; };
   }, [playbackId]);
 
-  // Hapus useEffect timer yang lama (simulasi 5 detik)
-  // useEffect(() => {
-  //   // DEMO: panggil onCompleted setelah 5 detik...
-  // }, [onCompleted, playbackId]);
-
-  // 3. Fungsi untuk event 'ended' yang sebenarnya
   const handleVideoEnd = () => {
     if (onCompleted) {
-      onCompleted(); // Panggil 'onCompleted' saat video benar-benar selesai
+      onCompleted(); 
     }
   };
 
-  // 4. Fungsi untuk membaca metadata video (termasuk durasi)
+  const handleTimeUpdate = () => {
+    if (videoRef.current && onTimeUpdate) {
+      // Panggil onTimeUpdate dengan data waktu saat ini dan durasi video
+      onTimeUpdate({ 
+        currentTime: videoRef.current.currentTime, 
+        duration: videoRef.current.duration 
+      }); 
+    }
+  };
+
   const handleMetadataLoaded = () => {
     if (videoRef.current) {
       console.log('DURASI VIDEO ASLI (detik):', videoRef.current.duration);
-      // Buka konsol browser (Inspect Element > Console)
-      // Anda akan melihat angka seperti 540 (9 menit) di sini.
-      // Ini adalah angka yang seharusnya ada di database Anda.
     }
   };
 
@@ -40,13 +41,14 @@ export default function SignedMuxPlayer({ playbackId, onCompleted }) {
   
   return (
     <video
-      ref={videoRef} // 5. Tambahkan ref
+      ref={videoRef} 
       className="w-full aspect-video rounded-xl bg-black"
       controls
       src={src}
       playsInline
-      onEnded={handleVideoEnd} // 6. Ganti timer dengan event 'ended'
-      onLoadedMetadata={handleMetadataLoaded} // 7. Tambahkan event 'loadedmetadata'
+      onEnded={handleVideoEnd} 
+      onLoadedMetadata={handleMetadataLoaded} 
+      onTimeUpdate={handleTimeUpdate} // <--- PERUBAHAN KRITIS: Tambahkan event onTimeUpdate
     />
   );
 }
