@@ -1,15 +1,20 @@
 {
   "pages": {
-    "/cert/[code]/page": [
+    "/learn/[courseId]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/cert/[code]/page.js"
+      "static/chunks/app/learn/[courseId]/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
+    ],
+    "/cert/[code]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/cert/[code]/page.js"
     ]
   }
 }

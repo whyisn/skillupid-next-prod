@@ -11,6 +11,19 @@ export default async function LearnPage({ params, searchParams }) {
     redirect(`/auth/sign-in?redirect=${encodeURIComponent(`/learn/${params.courseId}`)}`);
   }
 
+  // --- [PERBAIKAN NAMA USER DI SINI] ---
+  // 1. Fetch User Profile untuk Full Name
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  // 2. Tentukan userName dengan memprioritaskan full_name
+  const userName = profile?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || 'Student';
+  // ------------------------------------
+
+
   // 1. Cek Enrollment
   const { data: enrollment } = await supabase
     .from("enrollments")
@@ -79,29 +92,26 @@ export default async function LearnPage({ params, searchParams }) {
   // 4b. Gabungkan Video (>= 80%) DAN Kuis Lulus
   modules.forEach(mod => {
       const isQuizPassed = quizPassedMap[mod.id] === true;
-      const isVideoComplete = (initialProgress[mod.id] || 0) >= 80; // Cek Video 80%
+      const isVideoComplete = (initialProgress[mod.id] || 0) >= 80;
 
       if (isQuizPassed && isVideoComplete) {
           completedModuleIds.add(mod.id);
       }
   });
 
-  // [BARU] Cek apakah SEMUA modul sudah selesai
+  // 4c. Cek apakah SEMUA modul sudah selesai
   const courseFullyComplete = modules.length > 0 && completedModuleIds.size === modules.length;
 
-  // 4c. Tentukan daftar ID modul yang terkunci
+  // 4d. Tentukan daftar ID modul yang terkunci
   const lockedModuleIds = [];
   modules.forEach((mod, index) => {
-    if (index === 0) return; // Modul pertama selalu terbuka
+    if (index === 0) return;
     const prevMod = modules[index - 1];
     
     if (!completedModuleIds.has(prevMod.id)) {
       lockedModuleIds.push(mod.id);
     }
   });
-
-  // Ambil Nama User untuk Sertifikat (Fallback ke email)
-  const userName = user.user_metadata?.name || user.email?.split("@")[0] || 'Student';
 
 
   let activeId = searchParams?.m || modules[0].id;
@@ -120,9 +130,9 @@ export default async function LearnPage({ params, searchParams }) {
       
       // NEW PROPS FOR CERTIFICATE
       user_id={user.id}
-      userName={userName}
+      userName={userName} // <-- Mengirimkan nama yang sudah diverifikasi
       courseTitle={course?.title || 'Course'}
-      courseFullyComplete={courseFullyComplete} // Kirim status kelulusan total
+      courseFullyComplete={courseFullyComplete} 
     />
   );
 }
