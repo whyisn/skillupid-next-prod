@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-server';
 import { generateCertificatePDF } from '../../../../lib/certificates';
 import crypto from 'crypto';
+export const runtime = "nodejs";
+
 
 /**
  * Issue certificate for a user/course (requires SERVER auth; protect with middleware in production)
