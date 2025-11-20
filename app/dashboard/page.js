@@ -163,7 +163,7 @@ export default async function DashboardPage() {
                     ...course, 
                     total_duration_seconds: durationMap[course.id] || 0,
                     progress_percent: progressPercent,
-                    progress_summary: `${finalCompletedItems}/${totalItems} item diselesaikan`
+                    progress_summary: `${finalCompletedItems}/${totalItems}`
                 };
             });
         }
