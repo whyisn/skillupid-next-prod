@@ -1,89 +1,76 @@
 // app/profile/page.js — Server Component (Next.js App Router)
-// UI profil terhubung ke Supabase (read-only client untuk RSC)
+export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server"; // ⬅️ helper-mu (read-only)
+import { createClient } from "@/lib/supabase/server"; 
+import { Download, Award } from "lucide-react";
 
 function formatIDR(n) {
   try {
     return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
-  } catch {
-    return n;
-  }
-}
-
-function ProgressBar({ value = 0 }) {
-  return (
-    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-      <div className="h-full bg-gradient-to-r from-emerald-400 to-lime-400" style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }} />
-    </div>
-  );
+  } catch { return n; }
 }
 
 export default async function ProfilePage() {
-  // ✅ Supabase untuk Server Component (tidak menulis cookie)
   const supabase = createClient();
 
-  // 1) Auth (fail-soft bila tidak ada sesi)
+  // 1) Auth
   let user = null;
   try {
     const { data, error } = await supabase.auth.getUser();
     if (!error) user = data?.user ?? null;
-  } catch {
-    user = null;
-  }
+  } catch { user = null; }
   if (!user) redirect("/auth/sign-in");
 
-  // 2) Profile (opsi A: `profiles`; fallback ke `users`)
+  // 2) Profile
   let profile = null;
-  const { data: profA } = await supabase
-    .from("profiles")
-    .select("id, full_name, headline, avatar_url")
-    .eq("id", user.id)
-    .maybeSingle();
-
+  const { data: profA } = await supabase.from("profiles").select("id, full_name, headline, avatar_url").eq("id", user.id).maybeSingle();
   if (profA) profile = profA;
   if (!profile) {
-    const { data: profB } = await supabase
-      .from("users")
-      .select("id, full_name, headline, avatar_url")
-      .eq("id", user.id)
-      .maybeSingle();
+    const { data: profB } = await supabase.from("users").select("id, full_name, headline, avatar_url").eq("id", user.id).maybeSingle();
     if (profB) profile = profB;
   }
 
-  // 3) Enrollments + Courses
-  const { data: enrollments = [] } = await supabase
+  // 3) Enrollments (FIXED QUERY)
+  // Hanya ambil kolom yang PASTI ADA di tabel enrollments Anda agar tidak error/null
+  const { data: enrollmentsData } = await supabase
     .from("enrollments")
-    .select(
-      `id, progress, completed_modules, total_modules, updated_at, course_id,
-       courses:course_id ( id, title, thumbnail )`
-    )
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
+    .select(`id, course_id, status`) 
+    .eq("user_id", user.id);
+  
+  const enrollments = enrollmentsData || [];
 
   // 4) Certificates
-  const { data: certificates = [] } = await supabase
+  const { data: certificatesData } = await supabase
     .from("certificates")
-    .select("id, code, course_title, issued_at")
+    .select(`
+      id, code, pdf_url, issued_at,
+      courses:course_id ( title, thumbnail_url )
+    `)
     .eq("user_id", user.id)
     .order("issued_at", { ascending: false });
 
+  const certificates = certificatesData || [];
+
   // 5) Payments
-  const { data: payments = [] } = await supabase
+  const { data: paymentsData } = await supabase
     .from("payments")
     .select("id, ref, course_title, amount, status, paid_at, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
+  const payments = paymentsData || [];
+
   const displayName = profile?.full_name || user.user_metadata?.name || user.email?.split("@")[0];
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName || "User")}`;
   const headline = profile?.headline || "Belajar 10 menit per hari";
-  const completedCount = (enrollments || []).filter((e) => (e?.progress ?? 0) >= 100).length;
+  
+  // LOGIC BARU SESUAI REQUEST:
+  // Selesai = Jumlah Sertifikat
+  const completedCount = certificates.length;
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
-      {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-5">
         <a href="/dashboard" className="hover:text-gray-700">Dashboard</a>
         <span className="mx-2">/</span>
@@ -101,7 +88,7 @@ export default async function ProfilePage() {
             <p className="text-gray-500 text-sm mt-1">{headline}</p>
           </div>
           <div className="flex gap-2">
-            <a href="/learn" className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90">Lanjut Belajar</a>
+            <a href="/dashboard" className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90">Lanjut Belajar</a>
             <form action="/api/logout" method="POST">
               <button type="submit" className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50">Keluar</button>
             </form>
@@ -113,27 +100,30 @@ export default async function ProfilePage() {
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Kiri */}
         <div className="space-y-6">
+          {/* BAGIAN RINGKASAN BELAJAR (LOGIC DIPERBAIKI) */}
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold">Ringkasan Belajar</h2>
-            <p className="text-sm text-gray-500 mt-1">Aktivitas dan progres singkat</p>
+            <h2 className="text-lg md:text-xl font-semibold">Aktivitas</h2>
+            <p className="text-sm text-gray-500 mt-1">Ringkasan Belajar</p>
             <div className="grid grid-cols-3 gap-4 text-center mt-4">
               <div className="bg-emerald-50 rounded-xl p-4">
-                <div className="text-2xl font-bold">{enrollments?.length ?? 0}</div>
-                <div className="text-xs text-gray-600 mt-1">Kursus Diikuti</div>
+                {/* Logic: Jumlah data di tabel enrollments */}
+                <div className="text-2xl font-bold">{enrollments.length}</div>
+                <div className="text-xs text-gray-600 mt-1">Course</div>
               </div>
               <div className="bg-amber-50 rounded-xl p-4">
+                {/* Logic: Sama dengan jumlah sertifikat */}
                 <div className="text-2xl font-bold">{completedCount}</div>
                 <div className="text-xs text-gray-600 mt-1">Selesai</div>
               </div>
               <div className="bg-indigo-50 rounded-xl p-4">
-                <div className="text-2xl font-bold">{certificates?.length ?? 0}</div>
+                <div className="text-2xl font-bold">{certificates.length}</div>
                 <div className="text-xs text-gray-600 mt-1">Sertifikat</div>
               </div>
             </div>
           </section>
 
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold">Info Akun</h2>
+            <h2 className="text-lg md:text-xl font-semibold">Profil Saya</h2>
             <p className="text-sm text-gray-500 mt-1">Data diambil dari database</p>
             <dl className="mt-4 grid grid-cols-1 gap-3">
               <div className="grid grid-cols-3 gap-2 items-center">
@@ -169,82 +159,85 @@ export default async function ProfilePage() {
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg md:text-xl font-semibold">Kursus Diikuti</h2>
-                <p className="text-sm text-gray-500 mt-1">Lanjutkan dari modul terakhir</p>
+                <h2 className="text-lg md:text-xl font-semibold">Belajar Apa Hari Ini??</h2>
+                <p className="text-sm text-gray-500 mt-1">Cari kelas sesuai dengan minat anda</p>
               </div>
-              <a href="/courses" className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-sm">Jelajah Kursus</a>
+              <a href="/catalog" className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-sm">Jelajahi Kursus</a>
             </div>
-
             <div className="grid sm:grid-cols-2 gap-4 mt-4">
-              {(enrollments || []).map((e) => (
-                <article key={e.id} className="border border-gray-100 rounded-xl p-4 flex gap-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={e.courses?.thumbnail || "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?q=80&w=600&auto=format&fit=crop"}
-                    alt="thumb"
-                    className="w-24 h-24 rounded-lg object-cover"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold leading-snug">{e.courses?.title || "Tanpa Judul"}</h3>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {(e.completed_modules ?? 0)}/{(e.total_modules ?? 0)} modul · Aktivitas: {new Date(e.updated_at || Date.now()).toLocaleDateString("id-ID")}
-                    </p>
-                    <div className="mt-2"><ProgressBar value={e.progress ?? 0} /></div>
-                    <div className="mt-3 flex gap-2">
-                      <a href={`/learn/${e.course_id}`} className="px-3 py-1.5 rounded-lg bg-black text-white text-sm hover:opacity-90">Lanjutkan</a>
-                      <a href={`/courses/${e.course_id}`} className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm hover:bg-gray-50">Detail</a>
-                    </div>
-                  </div>
-                </article>
-              ))}
-              {(enrollments || []).length === 0 && (
-                <p className="text-sm text-gray-500">Belum ada kursus diikuti.</p>
-              )}
+              <p className="text-sm text-gray-500">Saatnya memulai!</p>
             </div>
           </section>
 
+          {/* SERTIFIKAT (IFRAME PDF) */}
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-3 mb-4">
               <div>
                 <h2 className="text-lg md:text-xl font-semibold">Sertifikat</h2>
-                <p className="text-sm text-gray-500 mt-1">Verifikasi publik & unduh PDF</p>
+                <p className="text-sm text-gray-500 mt-1">Unduh Sertifikat & Perbarui Portofolio Anda</p>
               </div>
-              <a href="/dashboard" className="text-sm underline">Lihat Semua</a>
+              <a href="/sertifikat" className="text-sm underline">Lihat Semua</a>
             </div>
 
-            {(certificates || []).length === 0 ? (
-              <p className="text-gray-500 text-sm mt-4">Belum ada sertifikat. Selesaikan kursus untuk mendapatkan sertifikat.</p>
+            {certificates.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                 <p className="text-gray-500 text-sm">Belum ada sertifikat. Selesaikan kursus untuk mendapatkannya.</p>
+              </div>
             ) : (
-              <div className="overflow-x-auto mt-4">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-500">
-                      <th className="py-2 pr-4">Kode</th>
-                      <th className="py-2 pr-4">Kursus</th>
-                      <th className="py-2 pr-4">Terbit</th>
-                      <th className="py-2 pr-4">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(certificates || []).map((c) => (
-                      <tr key={c.id} className="border-t">
-                        <td className="py-2 pr-4 font-mono">{c.code}</td>
-                        <td className="py-2 pr-4">{c.course_title}</td>
-                        <td className="py-2 pr-4">{new Date(c.issued_at).toLocaleDateString("id-ID")}</td>
-                        <td className="py-2 pr-4">
-                          <a href={`/cert/${c.code}`} className="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Verifikasi</a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {certificates.map((cert) => {
+                  const courseData = cert.courses || {}; 
+                  return (
+                    <div key={cert.id} className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-200">
+                      {/* IFRAME PREVIEW */}
+                      <div className="relative h-40 w-full bg-gray-100 overflow-hidden border-b border-gray-100">
+                        {cert.pdf_url ? (
+                            <>
+                              <iframe 
+                                src={`${cert.pdf_url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                className="w-full h-full border-0 pointer-events-none" 
+                                title={`Preview Sertifikat ${cert.code}`}
+                                loading="lazy" 
+                                scrolling="no"
+                              />
+                              <div className="absolute inset-0 z-10 bg-transparent" />
+                            </>
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100 text-emerald-600">
+                             <Award className="w-12 h-12 mb-2 opacity-80" />
+                             <span className="text-xs font-bold tracking-widest uppercase opacity-70">Certificate</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-4 flex flex-col flex-1">
+                        <h3 className="font-semibold text-gray-900 line-clamp-2 mb-1 leading-snug min-h-[2.5rem]" title={courseData.title}>
+                          {courseData.title || "Judul Kursus Tidak Ditemukan"}
+                        </h3>
+                        <p className="text-xs text-gray-500 mb-4 font-mono">ID: {cert.code}</p>
+                        <div className="mt-auto pt-3 border-t border-gray-100">
+                          {cert.pdf_url ? (
+                            <a 
+                              href={cert.pdf_url} target="_blank" download={`Sertifikat-${cert.code}.pdf`}
+                              className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+                            >
+                              <Download className="w-4 h-4" /> Unduh PDF
+                            </a>
+                          ) : (
+                            <button disabled className="w-full px-3 py-2 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium cursor-not-allowed">Memproses...</button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>
 
+          {/* PEMBAYARAN */}
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
             <h2 className="text-lg md:text-xl font-semibold">Pembayaran</h2>
-            <p className="text-sm text-gray-500 mt-1">Riwayat transaksi Midtrans</p>
             <div className="overflow-x-auto mt-4">
               <table className="min-w-full text-sm">
                 <thead>
@@ -257,7 +250,7 @@ export default async function ProfilePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(payments || []).map((p) => (
+                  {payments.map((p) => (
                     <tr key={p.id} className="border-t">
                       <td className="py-2 pr-4 font-mono">{p.ref}</td>
                       <td className="py-2 pr-4">{p.course_title}</td>
@@ -270,10 +263,8 @@ export default async function ProfilePage() {
                       <td className="py-2 pr-4">{p.paid_at ? new Date(p.paid_at).toLocaleString("id-ID") : "-"}</td>
                     </tr>
                   ))}
-                  {(payments || []).length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-3 text-sm text-gray-500">Belum ada transaksi.</td>
-                    </tr>
+                  {payments.length === 0 && (
+                    <tr><td colSpan={5} className="py-3 text-sm text-gray-500">Belum ada transaksi.</td></tr>
                   )}
                 </tbody>
               </table>
