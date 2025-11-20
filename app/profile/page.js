@@ -102,8 +102,8 @@ export default async function ProfilePage() {
         <div className="space-y-6">
           {/* BAGIAN RINGKASAN BELAJAR (LOGIC DIPERBAIKI) */}
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold">Ringkasan Belajar</h2>
-            <p className="text-sm text-gray-500 mt-1">Aktivitas dan progres singkat</p>
+            <h2 className="text-lg md:text-xl font-semibold">Aktivitas</h2>
+            <p className="text-sm text-gray-500 mt-1">Ringkasan Belajar</p>
             <div className="grid grid-cols-3 gap-4 text-center mt-4">
               <div className="bg-emerald-50 rounded-xl p-4">
                 {/* Logic: Jumlah data di tabel enrollments */}
@@ -123,7 +123,7 @@ export default async function ProfilePage() {
           </section>
 
           <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold">Info Akun</h2>
+            <h2 className="text-lg md:text-xl font-semibold">Profil Saya</h2>
             <p className="text-sm text-gray-500 mt-1">Data diambil dari database</p>
             <dl className="mt-4 grid grid-cols-1 gap-3">
               <div className="grid grid-cols-3 gap-2 items-center">
@@ -174,7 +174,7 @@ export default async function ProfilePage() {
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
                 <h2 className="text-lg md:text-xl font-semibold">Sertifikat</h2>
-                <p className="text-sm text-gray-500 mt-1">Verifikasi publik & unduh PDF</p>
+                <p className="text-sm text-gray-500 mt-1">Unduh Sertifikat & Perbarui Portofolio Anda</p>
               </div>
               <a href="/sertifikat" className="text-sm underline">Lihat Semua</a>
             </div>
