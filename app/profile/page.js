@@ -108,7 +108,7 @@ export default async function ProfilePage() {
               <div className="bg-emerald-50 rounded-xl p-4">
                 {/* Logic: Jumlah data di tabel enrollments */}
                 <div className="text-2xl font-bold">{enrollments.length}</div>
-                <div className="text-xs text-gray-600 mt-1">Kursus Diikuti</div>
+                <div className="text-xs text-gray-600 mt-1">Course</div>
               </div>
               <div className="bg-amber-50 rounded-xl p-4">
                 {/* Logic: Sama dengan jumlah sertifikat */}
