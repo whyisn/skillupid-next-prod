@@ -2,7 +2,7 @@
   "functions": {
     "app/api/certificates/issue/route.js": {
       "memory": 10056,   
-      "maxDuration": 10000 
+      "maxDuration": 900 
     }
   },
   "crons": []
