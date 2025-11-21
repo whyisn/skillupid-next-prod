@@ -1,7 +1,7 @@
 {
   "functions": {
     "app/api/certificates/issue/route.js": {
-      "memory": 10056,   
+      "memory": 2048,   
       "maxDuration": 300 
     }
   },
