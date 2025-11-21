@@ -147,9 +147,28 @@ export default function LearnClient({
                 }),
             });
 
-            const data = await res.json();
-            if (!res.ok || data.error) {
-                throw new Error(data?.error || "Gagal membuat sertifikat.");
+            // const data = await res.json();
+            // if (!res.ok || data.error) {
+            //     throw new Error(data?.error || "Gagal membuat sertifikat.");
+            // }
+
+            // router.push(`/cert/${data.certificate.code}`);
+
+            // Antisipasi kasus body kosong / bukan JSON supaya
+            // tidak terjadi "Unexpected end of JSON input"
+            let data = null;
+            try {
+              data = await res.json();
+            } catch (_) {
+              data = null;
+            }
+
+            if (!res.ok || data?.error) {
+              throw new Error(data?.error || "Gagal membuat sertifikat.");
+            }
+
+            if (!data?.certificate?.code) {
+              throw new Error("Respons sertifikat tidak valid.");
             }
 
             router.push(`/cert/${data.certificate.code}`);
