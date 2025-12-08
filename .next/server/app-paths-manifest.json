@@ -1,0 +1,10 @@
+{
+  "/courses/[id]/page": "app/courses/[id]/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/learn/[courseId]/page": "app/learn/[courseId]/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/quiz/[courseId]/[moduleId]/page": "app/quiz/[courseId]/[moduleId]/page.js",
+  "/api/video/signed/[playbackId]/route": "app/api/video/signed/[playbackId]/route.js",
+  "/api/quiz/submit/route": "app/api/quiz/submit/route.js",
+  "/api/quiz/status/route": "app/api/quiz/status/route.js"
+}

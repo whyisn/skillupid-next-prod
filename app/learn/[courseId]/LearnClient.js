@@ -1,4 +1,3 @@
-// app/learn/[courseId]/LearnClient.js
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -19,7 +18,6 @@ export default function LearnClient({
     const [showLockModal, setShowLockModal] = useState(false);
     const [lockReason, setLockReason] = useState({ video: false, quiz: false });
     const [isCertCheck, setIsCertCheck] = useState(false); 
-
 
     // ... (Logika Validasi URL & active/currentId tetap sama) ...
     
@@ -124,7 +122,6 @@ export default function LearnClient({
         if (checkingNext) return;
 
         if (!courseFullyComplete) {
-            // Jika belum selesai, cek status modul terakhir untuk ditampilkan di modal
             const videoCompleted = progress[active.id] >= 80;
             const quizPassed = await checkQuizPassed(active.id);
 
@@ -147,15 +144,6 @@ export default function LearnClient({
                 }),
             });
 
-            // const data = await res.json();
-            // if (!res.ok || data.error) {
-            //     throw new Error(data?.error || "Gagal membuat sertifikat.");
-            // }
-
-            // router.push(`/cert/${data.certificate.code}`);
-
-            // Antisipasi kasus body kosong / bukan JSON supaya
-            // tidak terjadi "Unexpected end of JSON input"
             let data = null;
             try {
               data = await res.json();
@@ -183,6 +171,9 @@ export default function LearnClient({
 
     const isLastModule = modules.length > 0 && active?.order_no === modules.length;
 
+    // --- LOGIC BARU: Cek apakah video sudah cukup ditonton untuk buka Quiz ---
+    const isQuizLocked = currentModuleProgress < 80;
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-12 gap-6 relative">
             {/* Modal Terkunci (Konten Dinamis) */}
@@ -200,7 +191,6 @@ export default function LearnClient({
                                 <Lock className="w-7 h-7 text-red-500" />
                             </div>
                             
-                            {/* Judul disesuaikan */}
                             <h3 className="text-xl font-bold text-gray-900 mb-2">
                                 {isCertCheck ? 'Sertifikat Belum Tersedia' : 'Modul Terkunci'}
                             </h3>
@@ -208,11 +198,9 @@ export default function LearnClient({
                                 {isCertCheck ? 'Anda harus menyelesaikan semua modul dan quiz pada kelas ini' : 'Untuk masuk ke modul berikutnya, Anda harus:'}
                             </p>
                             
-                            {/* [PERUBAHAN LOGIKA LIST] List disesuaikan per konteks */}
                             <div className="w-full text-sm text-left space-y-2">
                                 {isCertCheck ? (
                                     <>
-                                        {/* Syarat Sertifikat (Course Wide) */}
                                         <div className={`flex items-start gap-2 p-3 rounded-lg ${lockReason.video ? 'bg-red-50' : 'bg-green-50'}`}>
                                             <span className={`font-semibold text-lg flex-shrink-0 ${lockReason.video ? 'text-red-600' : 'text-green-600'}`}>{lockReason.video ? '✕' : '✓'}</span>
                                             <span className="text-gray-700">Selesaikan seluruh modul pada course ini.</span>
@@ -224,7 +212,6 @@ export default function LearnClient({
                                     </>
                                 ) : (
                                     <>
-                                        {/* Syarat Progresi (Current Module) */}
                                         <div className={`flex items-start gap-2 p-3 rounded-lg ${lockReason.video ? 'bg-red-50' : 'bg-green-50'}`}>
                                             <span className={`font-semibold text-lg flex-shrink-0 ${lockReason.video ? 'text-red-600' : 'text-green-600'}`}>{lockReason.video ? '✕' : '✓'}</span>
                                             <span className="text-gray-700">Tonton video hingga selesai (minimal 80%).</span>
@@ -237,7 +224,6 @@ export default function LearnClient({
                                 )}
                             </div>
                             
-                            {/* Tombol Aksi Modal */}
                             <div className="mt-6 w-full grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setShowLockModal(false)}
@@ -246,7 +232,6 @@ export default function LearnClient({
                                     Tutup
                                 </button>
                                 <a
-                                    // Arahkan ke Quiz jika Quiz gagal, atau Lanjutkan Video jika hanya Video yang gagal
                                     href={lockReason.quiz ? `/quiz/${courseId}/${active?.id}` : '#'} 
                                     onClick={() => !lockReason.quiz && setShowLockModal(false)} 
                                     className={`px-4 py-2.5 rounded-xl text-white font-medium transition-colors flex items-center justify-center ${lockReason.quiz ? 'bg-black hover:bg-gray-900' : 'bg-[#1ABC9C] hover:bg-[#16a085]'}`}
@@ -304,15 +289,28 @@ export default function LearnClient({
                 </div>
 
                 <div className="mt-8 flex flex-wrap gap-3 border-t pt-6">
-                    {/* Tombol Mulai Kuis */}
-                    <a
-                        href={`/quiz/${courseId}/${active?.id}`}
-                        className="px-6 py-3 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-colors font-medium"
-                    >
-                        Quiz
-                    </a>
+                    {/* [UPDATE LOGIC]: Button Quiz
+                        Jika currentModuleProgress < 80, tampilkan tombol disabled dengan icon Lock.
+                        Jika >= 80, tampilkan link Quiz normal.
+                    */}
+                    {isQuizLocked ? (
+                         <button
+                            disabled
+                            className="px-6 py-3 rounded-xl bg-gray-200 text-gray-400 cursor-not-allowed font-medium flex items-center gap-2"
+                            title="Tonton video minimal 80% untuk membuka Quiz"
+                        >
+                            <Lock className="w-4 h-4" />
+                            Quiz
+                        </button>
+                    ) : (
+                        <a
+                            href={`/quiz/${courseId}/${active?.id}`}
+                            className="px-6 py-3 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-colors font-medium"
+                        >
+                            Quiz
+                        </a>
+                    )}
                     
-                    {/* [KONDISIONAL TOMBOL KANAN] */}
                     {isLastModule ? (
                         <button
                             onClick={handleDownloadCertificate}
