@@ -1,19 +1,14 @@
-// app/courses/[id]/EnrollActions.js
 "use client";
 
-// [PERUBAHAN] 'Fragment' ditambahkan untuk me-return modal dan tombol
 import { useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 
 export default function EnrollActions({ course }) {
   const [loading, setLoading] = useState(false);
-  // [TAMBAHAN] State untuk menampilkan/menyembunyikan modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   
   const router = useRouter();
 
-  // [PERUBAHAN] Nama fungsi diubah menjadi 'handleEnroll'
-  // Logika window.confirm() dihapus karena sudah ditangani modal
   const handleEnroll = async () => {
     setLoading(true);
     try {
@@ -23,6 +18,15 @@ export default function EnrollActions({ course }) {
         body: JSON.stringify({ course_id: course.id }),
         credentials: "include",
       });
+
+      // [LOGIKA BARU] Cek apakah user belum login (401)
+      if (res.status === 401) {
+        // Arahkan ke halaman login dengan membawa url tujuan (redirect)
+        // encodeURIComponent digunakan agar URL aman
+        const redirectUrl = encodeURIComponent(`/courses/${course.id}`);
+        router.push(`/auth/sign-in?redirect=${redirectUrl}`);
+        return; // Hentikan eksekusi agar tidak lanjut ke alert error
+      }
     
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -35,77 +39,51 @@ export default function EnrollActions({ course }) {
       alert(e.message);
     } finally {
       setLoading(false);
-      // [TAMBAHAN] Selalu tutup modal setelah aksi selesai
       setShowConfirmModal(false);
     }
   };
 
-  // Fungsi checkout (logika tidak berubah)
-  // const checkout = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const res = await fetch("/api/checkout", {
-  //       method: "POST",
-  //       headers: { "content-type": "application/json" },
-  //       body: JSON.stringify({ course_id: course.id }),
-  //     });
-  //     const data = await res.json();
-  //     if (data?.snapToken) {
-  //       // eslint-disable-next-line no-undef
-  //       window.snap?.pay(data.snapToken, {
-  //         onSuccess: () => (window.location.href = "/dashboard"),
-  //         onPending: () => (window.location.href = "/dashboard"),
-  //         onError: () => alert("Pembayaran gagal"),
-  //         onClose: () => {},
-  //       });
-  //     } else {
-  //       window.location.href = "/dashboard";
-  //     }
-  //   } catch (e) {
-  //     alert(e.message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const checkout = async () => {
-  setLoading(true);
-  try {
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ course_id: course.id }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data?.error || "Checkout gagal");
-    }
-
-    // backend mengirim { token, redirect_url }
-    if (data?.token) {
-      // eslint-disable-next-line no-undef
-      window.snap?.pay(data.token, {
-        onSuccess: () => (window.location.href = "/dashboard"),
-        onPending: () => (window.location.href = "/dashboard"),
-        onError: () => alert("Pembayaran gagal"),
-        onClose: () => {},
+    setLoading(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ course_id: course.id }),
       });
-    } else if (data?.redirect_url) {
-      window.location.href = data.redirect_url;
-    } else {
-      window.location.href = "/dashboard";
+
+      // [OPSIONAL] Logika yang sama juga sebaiknya diterapkan di checkout
+      if (res.status === 401) {
+        const redirectUrl = encodeURIComponent(`/courses/${course.id}`);
+        router.push(`/auth/sign-in?redirect=${redirectUrl}`);
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "Checkout gagal");
+      }
+
+      if (data?.token) {
+        // eslint-disable-next-line no-undef
+        window.snap?.pay(data.token, {
+          onSuccess: () => (window.location.href = "/dashboard"),
+          onPending: () => (window.location.href = "/dashboard"),
+          onError: () => alert("Pembayaran gagal"),
+          onClose: () => {},
+        });
+      } else if (data?.redirect_url) {
+        window.location.href = data.redirect_url;
+      } else {
+        window.location.href = "/dashboard";
+      }
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setLoading(false);
     }
-  } catch (e) {
-    alert(e.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-
-  // [TAMBAHAN] Helper 'formatRupiah' dibutuhkan untuk tombol premium
-  // (Anda bisa menghapus ini jika Anda mengimpornya dari file lain)
   const formatRupiah = (value) =>
     new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -115,7 +93,6 @@ export default function EnrollActions({ course }) {
 
   // --- Render ---
 
-  // [PERUBAHAN] Kursus gratis (sesuai kode Anda)
   if (!course.premium) {
     return (
       <Fragment>
@@ -159,7 +136,6 @@ export default function EnrollActions({ course }) {
     );
   }
 
-  // [PERUBAHAN] Kursus premium (sesuai kode Anda)
   return (
     <button
       onClick={checkout}
